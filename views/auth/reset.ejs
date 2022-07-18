@@ -1,0 +1,22 @@
+<%- include("../includes/head.ejs")%>
+<link rel="stylesheet" href="/public/css/forms.css">
+
+  </head>
+
+  <body>
+
+    <%- include("../includes/navigation.ejs")%>
+    
+    <main>
+      <% if (error != null) { %>
+        <h3 class="error"><%= error %></h3>
+      <% } %>
+      
+      <form action="/auth/reset" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="text" class="<%= error != null ? 'invalid' : ''%>" value="<%= error != null ? oldInput.email : ''%>" placeholder="Email" name="email">
+        <button type="submit">Send reset link</button>
+      </form>
+      
+    </main>
+    <%- include('../includes/end.ejs') %>

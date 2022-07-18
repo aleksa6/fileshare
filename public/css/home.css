@@ -1,0 +1,10 @@
+h2,
+h4 {
+  opacity: 0.6;
+  color: purple;
+}
+
+h2 span {
+  color: green;
+  opacity: 1;
+}

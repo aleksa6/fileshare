@@ -1,0 +1,14 @@
+<%- include("../includes/head.ejs")%>
+
+  </head>
+
+  <body>
+
+    <%- include("../includes/navigation.ejs")%>
+    
+    <main>
+      <% if (message != null) { %>
+        <p class="<%= isSuccess ? 'message__success' : 'message__fail' %>"><%= message %></p>
+      <% } %>
+    </main>
+    <%- include('../includes/end.ejs') %>

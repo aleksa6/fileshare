@@ -1,0 +1,42 @@
+nav {
+  width: 100%;
+  text-align: center;
+}
+
+nav ul li {
+  list-style-type: none;
+  display: inline-block;
+  margin: 0.75rem;
+  cursor: pointer;
+}
+
+nav ul .auth {
+  background-color: purple;
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+nav ul .auth:hover {
+  transition: 0.2s;
+  opacity: 1;
+}
+
+nav ul .auth a {
+  color: white;
+  opacity: 1;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: purple;
+  font-weight: bold;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+nav ul li a:hover {
+  opacity: 1;
+  transition: 0.2s;
+}

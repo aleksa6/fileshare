@@ -1,0 +1,26 @@
+<%- include("../includes/head.ejs")%>
+<link rel="stylesheet" href="/public/css/forms.css">
+
+  </head>
+
+  <body>
+
+    <%- include("../includes/navigation.ejs")%>
+    
+    <main>
+      <% if (error != null) { %>
+        <h3 class="error"><%= error %></h3>
+      <% } %>
+      
+      <form action="/create-group" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="text" class="<%= error != null && fields.includes('name') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.name : ''%>" placeholder="Name" name="name">
+        <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password">
+        <input type="password" class="<%= error != null && fields.includes('passwordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.passwordConf : ''%>" placeholder="Confirm password" name="passwordConf">
+        <input type="password" class="<%= error != null && fields.includes('adminPassword') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.adminPassword : ''%>" placeholder="Admin password" name="adminPassword">
+        <input type="password" class="<%= error != null && fields.includes('adminPasswordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.adminPasswordConf : ''%>" placeholder="Confirm admin password" name="adminPasswordConf">
+        <button type="submit">Create</button>
+      </form>
+      
+    </main>
+    <%- include('../includes/end.ejs') %>

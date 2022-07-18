@@ -1,0 +1,25 @@
+<%- include("../includes/head.ejs")%>
+<link rel="stylesheet" href="/public/css/forms.css">
+
+  </head>
+
+  <body>
+
+    <%- include("../includes/navigation.ejs")%>
+    
+    <main>
+      <% if (error != null) { %>
+        <h3 class="error"><%= error %></h3>
+      <% } else if (message != null) { %>
+        <h3 class="message"><%= message %></h3>
+      <% } %>
+      
+      <form action="/join" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input value="<%= error != null ? oldInput.code : ''%>" type="text" placeholder="Group ID" name="code">
+        <input class="<%= error != null ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" type="password" placeholder="Password" name="password">
+        <button type="submit">Join</button>
+      </form>
+      
+    </main>
+    <%- include('../includes/end.ejs') %>
