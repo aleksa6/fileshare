@@ -38,6 +38,9 @@ const error = (title, message) => {
 
 // MIDDLEWARES
 
+const wait = (time) =>
+  new Promise((resolve) => setTimeout(resolve, time * 1000));
+
 exports.homePage = async (req, res, next) => {
   try {
     res.render("main/home", {
@@ -131,8 +134,7 @@ exports.getCreateGroup = async (req, res, next) => {
 
 exports.postCreateGroup = async (req, res, next) => {
   try {
-    const { name, password, passwordConf, adminPassword, adminPasswordConf } =
-      req.body;
+    const { name, description, password, passwordConf } = req.body;
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -140,10 +142,9 @@ exports.postCreateGroup = async (req, res, next) => {
         message: errors.array()[0].msg,
         oldInput: {
           name,
+          description,
           password,
           passwordConf,
-          adminPassword,
-          adminPasswordConf,
         },
         fields: errors.array().map((err) => err.param),
       });
@@ -152,22 +153,18 @@ exports.postCreateGroup = async (req, res, next) => {
       });
     }
 
-    const hashedPw = await bcrypt.hash(password, 12);
-    const hashedAdminPw = await bcrypt.hash(adminPassword, 12);
+    const user = await User.findById(req.session.user._id);
+
     const group = await Group.create({
       name,
+      description,
       password: hashedPw,
-      adminPassword: hashedAdminPw,
+      admins: [user._id],
       files: [],
     });
 
-    if (req.session.isLoggedIn) {
-      const user = await User.findById(req.session.user._id);
-      if (user != null) {
-        user.groups.push(group._id);
-        await user.save();
-      }
-    }
+    user.groups.push(group._id);
+    await user.save();
 
     message(req, res, "Group Created", "Group successfully created", true);
   } catch (err) {
@@ -193,7 +190,7 @@ exports.getGroups = async (req, res, next) => {
   try {
     const user = await User.findById(req.session.user._id)
       .lean()
-      .populate("groups", "name");
+      .populate("groups", "name description code");
 
     if (!user)
       message(
@@ -227,7 +224,9 @@ exports.getGroup = async (req, res, next) => {
       );
     }
 
-    const group = await Group.findById(groupId).populate("files").lean();
+    const group = await Group.findById(groupId)
+      .populate("files", "filename description")
+      .lean();
 
     if (group == null)
       return message(
@@ -257,33 +256,29 @@ exports.getGroup = async (req, res, next) => {
 };
 
 exports.upload = async (req, res, next) => {
-  console.log("START");
   try {
     const groupId = req.body.groupId;
-    console.log("HERE 0");
+
     if (!isValid(groupId)) error("Invalid ID", "Group ID is invalid");
-    console.log("HERE 1");
+
     const group = await Group.findById(groupId);
-    console.log("HERE 2");
+
     if (group == null) error("Group Not Found", "Could not find a group");
-    console.log("HERE 3");
+
     if (!isMember(req, group))
       error(
         "Access Denied",
         "You have to be a member of the group to be able to download and share files"
       );
-    console.log("HERE 4");
-    for (const fileData of req.files) {
-      console.log(fileData);
 
+    for (const fileData of req.files) {
       const file = await File.create({
         filename: fileData.originalname,
         mimetype: fileData.mimetype,
-        path: path.join(require.main.filename, fileData.path),
+        path: fileData.path,
+        description: req.body.description,
         group: group._id,
       });
-
-      console.log(file);
 
       group.files.push(file._id);
     }
@@ -319,10 +314,7 @@ exports.download = async (req, res, next) => {
         false
       );
 
-    const fstream = fs.createReadStream(file.path);
-    res.setHeader("Content-Type", file.mimetype);
-    res.setHeader("Content-Disposition", `inline; filename="${file.filename}"`);
-    fstream.pipe(res);
+    res.download(file.path, file.filename);
   } catch (err) {
     next(err);
   }

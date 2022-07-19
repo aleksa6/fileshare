@@ -17,7 +17,7 @@
       <% if (group.files.length > 0) { %>
         <ul>
           <% group.files.forEach(file => { %>
-            <li><a href="/file/<%= file._id %>"><%= file.filename %></a></li>
+            <li><a href="/file/<%= file._id %>"><%= file.filename %> - <span style="font-size: small;"><%= file.description %></span></a></li>
           <% }) %>
         </ul>
       <% } else { %>

@@ -11,7 +11,7 @@
       <% if (groups.length > 0) { %>
         <ul>
           <% groups.forEach(group => { %>
-            <li><a href="/group/<%= group._id %>"><%= group.name %></a></li>
+            <li><a href="/group/<%= group._id %>"><%= group.name %> | <span style="font-size: small;"><%= group.description %></span> | CODE = <%= group.code %></a></li>
           <% }) %>
         </ul>
       <% } else { %>

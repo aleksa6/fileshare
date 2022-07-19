@@ -10,11 +10,14 @@ exports.upload = async (req, res, next) => {
     req.files = [];
     let uploads = [];
     let done = false;
+
     bb.on("field", (name, value, info) => {
       req.body[name] = value;
     });
+
     bb.on("file", (name, file, info) => {
       if (info.filename == null) return next();
+      
       const saveTo = path.join(
         require.main.path,
         "files",
@@ -23,40 +26,48 @@ exports.upload = async (req, res, next) => {
 
       const fstream = fs.createWriteStream(saveTo);
 
-      uploads.push([saveTo, fstream, info.filename, info.mimeType]);
+      const fileData = {
+        path: saveTo,
+        fstream,
+        filename: info.filename,
+        mimetype: info.mimeType,
+      };
+
+      uploads.push(fileData);
 
       file.pipe(fstream);
 
       file.on("end", async () => {
-        const fileData = uploads.splice(
-          uploads.find((upload) => upload.saveTo === saveTo),
-          1
-        );
+        const fileData = uploads.pop();
+
         req.files.push({
-          path: fileData[0][0],
-          filename: fileData[0][2],
-          mimetype: fileData[0][3],
+          path: fileData.path,
+          filename: fileData.filename,
+          mimetype: fileData.mimetype,
         });
       });
     });
+
     bb.on("close", () => {
       done = true;
       next();
     });
-    req.on("close", (err) => {
-      setImmediate(() => {
-        if (!done) {
-          if (uploads.length > 0) {
-            uploads.forEach(async (upload) => {
-              upload[1].end();
-              await fs.unlink(upload[0], (err) => {
-                if (err) return next(err);
-              });
-            });
-          }
+
+    const abortHandler = async () => {
+      if (!done && uploads.length > 0) {
+        for (const upload of uploads) {
+          upload.fstream.end();
+          await fs.unlink(upload.path, (err) => {
+            if (err) return next(err);
+          });
         }
-      });
+      }
+    };
+
+    req.on("close", (err) => {
+      setImmediate(abortHandler);
     });
+
     req.pipe(bb);
   } catch (err) {
     next(err);

@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 
 require("dotenv").config();
 const mongoose = require("mongoose");
@@ -30,20 +31,11 @@ const store = new MongoDBStore({
   uri: MONGODB_URI,
   collection: "sessions",
 });
-// const fileStorage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "files");
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, `${uuidv4()}.${file.originalname.split(".").slice(-1)}`);
-//   },
-// });
 
 app.set("view engine", "ejs");
 
 app.use(limiter);
 app.use(express.urlencoded({ extended: false }));
-// app.use(multer({ storage: fileStorage }).any("file"));
 app.use("/public", express.static(path.join(__dirname, "public")));
 app.use("/files", express.static(path.join(__dirname, "files")));
 app.use(
@@ -83,11 +75,12 @@ app.use((req, res, next) => {
   res.render("404", { pageTitle: "Not Found" });
 });
 
-app.use((error, req, res, next) => {
+app.use(async (error, req, res, next) => {
   console.log(error);
 
-  if (req.files.length > 0)
-    req.files.forEach(async (file) => await fs.unlink(file.path));
+  if (req.files && req.files.length > 0)
+    for (const file of req.files)
+      await fs.unlink(file.path, (err) => console.log(err));
 
   message(req, res, error.title || "Error", error.msg, false);
 });

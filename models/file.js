@@ -14,7 +14,19 @@ const fileSchema = new Schema(
     },
     mimetype: {
       type: String,
-      required: true
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    id: {
+      type: String,
+      required: true,
+    },
+    sharedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     group: {
       type: Schema.Types.ObjectId,

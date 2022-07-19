@@ -5,19 +5,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const groupSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  adminPassword: {
-    type: String,
-    required: true,
-  },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  password: { type: String, required: true },
   code: String,
+  admins: [{ type: Schema.Types.ObjectId, ref: "User" }],
   files: [{ type: Schema.Types.ObjectId, ref: "File" }],
 });
 
