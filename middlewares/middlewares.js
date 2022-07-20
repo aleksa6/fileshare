@@ -17,7 +17,7 @@ exports.upload = async (req, res, next) => {
 
     bb.on("file", (name, file, info) => {
       if (info.filename == null) return next();
-      
+
       const saveTo = path.join(
         require.main.path,
         "files",

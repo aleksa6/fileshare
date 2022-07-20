@@ -1,6 +1,3 @@
-const path = require("path");
-const fs = require("fs");
-
 const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
@@ -9,6 +6,8 @@ const { message } = require("../util/util");
 const Group = require("../models/group");
 const User = require("../models/user");
 const File = require("../models/file");
+const Message = require("../models/message");
+const user = require("../models/user");
 
 // FUNCTIONS
 
@@ -30,6 +29,11 @@ const isMember = (req, group) =>
 
 const isValid = (id) => mongoose.Types.ObjectId.isValid(id);
 
+const isAdmin = (req, group) =>
+  group.admins.find(
+    (userId) => userId.toString() === req.session.user._id.toString()
+  ) !== -1;
+
 const error = (title, message) => {
   const error = new Error(message);
   error.title = title;
@@ -37,9 +41,6 @@ const error = (title, message) => {
 };
 
 // MIDDLEWARES
-
-const wait = (time) =>
-  new Promise((resolve) => setTimeout(resolve, time * 1000));
 
 exports.homePage = async (req, res, next) => {
   try {
@@ -155,12 +156,15 @@ exports.postCreateGroup = async (req, res, next) => {
 
     const user = await User.findById(req.session.user._id);
 
+    const hashedPw = await bcrypt.hash(password, 12);
+
     const group = await Group.create({
       name,
       description,
       password: hashedPw,
+      owner: user._id,
       admins: [user._id],
-      files: [],
+      messages: [],
     });
 
     user.groups.push(group._id);
@@ -225,7 +229,14 @@ exports.getGroup = async (req, res, next) => {
     }
 
     const group = await Group.findById(groupId)
-      .populate("files", "filename description")
+      .populate({
+        path: "messages",
+        select: "description files createdAt",
+        populate: [
+          { path: "sender", select: "name" },
+          { path: "files", select: "filename" },
+        ],
+      })
       .lean();
 
     if (group == null)
@@ -255,7 +266,7 @@ exports.getGroup = async (req, res, next) => {
   }
 };
 
-exports.upload = async (req, res, next) => {
+exports.sendMessage = async (req, res, next) => {
   try {
     const groupId = req.body.groupId;
 
@@ -271,17 +282,30 @@ exports.upload = async (req, res, next) => {
         "You have to be a member of the group to be able to download and share files"
       );
 
+    if (!isAdmin(req, group))
+      error("Not Authorized", "You have to be admin to be able to share files");
+
+    const notification = new Message({
+      description: req.body.description,
+      sender: req.session.user._id,
+      group: group._id,
+      files: [],
+    });
+
     for (const fileData of req.files) {
       const file = await File.create({
         filename: fileData.originalname,
         mimetype: fileData.mimetype,
         path: fileData.path,
-        description: req.body.description,
-        group: group._id,
+        message: notification._id,
       });
 
-      group.files.push(file._id);
+      notification.files.push(file._id);
     }
+
+    await notification.save();
+
+    group.messages.push(notification._id);
 
     await group.save();
 

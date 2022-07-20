@@ -8,18 +8,22 @@
     <%- include("../includes/navigation.ejs")%>
     
     <main>
-      <form action="/share-file?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+      <form action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
         <input type="file" name="file" accept="*" multiple>
         <input type="text" placeholder="Description" name="description">
         <button type="submit">Share</button>
       </form>
-      <% if (group.files.length > 0) { %>
-        <ul>
-          <% group.files.forEach(file => { %>
-            <li><a href="/file/<%= file._id %>"><%= file.filename %> - <span style="font-size: small;"><%= file.description %></span></a></li>
-          <% }) %>
-        </ul>
+      <% if (group.messages.length > 0) { %>
+        <% group.messages.forEach(message => { %>
+          <ul class="msg-border">
+            <h3><%= message.description %></h3>
+            <% message.files.forEach(file => { %>
+              <li><a href="/file/<%= file._id %>"><%= file.filename %></span></a></li>
+            <% }) %>
+            <h3>shared by <%= message.sender.name %> at <%= message.createdAt.toLocaleDateString("en-US", {day: "numeric", month: "long", year: "numeric"}) %></h3>
+          </ul>
+        <% }) %>
       <% } else { %>
         <h2>There are no files in this group at the moment. Be first to share file</h2>
       <% } %>

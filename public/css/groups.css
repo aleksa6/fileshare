@@ -42,6 +42,28 @@ main ul li a {
   color: purple;
 }
 
+main ul.msg-border {
+  margin: 0.5rem;
+  border-radius: 5px;
+  border: 1.5px solid purple;
+}
+
+main ul.msg-border h3:first-of-type {
+  font-size: small;
+  padding-top: 1rem;
+  padding-bottom: 0;
+  padding-left: 1rem;
+  padding-left: 1rem;
+}
+
+main ul.msg-border h3:last-of-type {
+  font-size: small;
+  padding-top: 0;
+  padding-bottom: 1rem;
+  padding-left: 1rem;
+  padding-left: 1rem;
+}
+
 #share {
   text-decoration: none;
   font-family: sans-serif;

@@ -9,8 +9,9 @@ const groupSchema = new Schema({
   description: { type: String, required: true },
   password: { type: String, required: true },
   code: String,
+  owner: { type: Schema.Types.ObjectId, ref: "User" },
   admins: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  files: [{ type: Schema.Types.ObjectId, ref: "File" }],
+  messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
 });
 
 groupSchema.pre("save", async function () {

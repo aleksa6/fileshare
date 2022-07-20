@@ -88,7 +88,7 @@ router.get("/group/:groupId", groupController.getGroup);
 
 router.get("/file/:fileId", groupController.download);
 
-router.post("/share-file", isAuth, upload.any(), groupController.upload);
+router.post("/send-message", isAuth, upload.any(), groupController.sendMessage);
 
 router.get("/message", groupController.message);
 
