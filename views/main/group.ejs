@@ -8,12 +8,22 @@
     <%- include("../includes/navigation.ejs")%>
     
     <main>
-      <form action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+      <% if (isAdmin) { %>
+        <form action="/group/<%= group._id.toString() %>/message-requests" method="GET">
+          <button type="submit" class="admin_button">Review Message Requests</button>
+        </form>
+      <% } %>
+      <form action="/group/<%= group._id.toString() %>/members" method="GET">
+        <button type="submit" class="admin_button">Members</button>
+      </form>
+      <hr>
+      <form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
         <input type="file" name="file" accept="*" multiple>
-        <input type="text" placeholder="Description" name="description">
-        <button type="submit">Share</button>
+        <textarea name="description" placeholder="Description" cols="30" rows="10"></textarea>
+        <button type="submit"><%= isAdmin ? "Share" : "Request" %></button>
       </form>
+      <hr>
       <% if (group.messages.length > 0) { %>
         <% group.messages.forEach(message => { %>
           <ul class="msg-border">
@@ -21,11 +31,13 @@
             <% message.files.forEach(file => { %>
               <li><a href="/file/<%= file._id %>"><%= file.filename %></span></a></li>
             <% }) %>
-            <h3>shared by <%= message.sender.name %> at <%= message.createdAt.toLocaleDateString("en-US", {day: "numeric", month: "long", year: "numeric"}) %></h3>
+            <h3>shared by <span style="color: green;"><%= message.sender.name %></span> on <span style="color: green;"><%= message.createdAt.toLocaleDateString("en-US", {minute: "numeric", hour: "numeric", day: "numeric", month: "long", year: "numeric"}) %></span></h3>
           </ul>
         <% }) %>
+        <ul style="height: 0;"><li style="border: none; cursor: default; height: 0;"><a style="color: white; cursor: default; height: 0;">placeholder</a></li></ul>
       <% } else { %>
-        <h2>There are no files in this group at the moment. Be first to share file</h2>
+        <h2 style="margin: .25rem 1rem; color: purple; opacity: 0.6">There are no files in this group at the moment. Be first to share file</h2>
       <% } %>
     </main>
+
     <%- include('../includes/end.ejs') %>

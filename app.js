@@ -9,11 +9,10 @@ const session = require("express-session");
 const rateLimit = require("express-rate-limit");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const flash = require("connect-flash");
-// const { v4: uuidv4 } = require("uuid");
-// const multer = require("multer");
 
 const authRoutes = require("./routes/auth");
 const groupRoutes = require("./routes/groups");
+const adminRoutes = require("./routes/admin")
 const { message } = require("./util/util");
 
 const limiter = rateLimit({
@@ -82,7 +81,13 @@ app.use(async (error, req, res, next) => {
     for (const file of req.files)
       await fs.unlink(file.path, (err) => console.log(err));
 
-  message(req, res, error.title || "Error", error.msg, false);
+  message(
+    req,
+    res,
+    error.title || "Error",
+    error.message || "Internal server error",
+    false
+  );
 });
 
 mongoose

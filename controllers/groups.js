@@ -1,46 +1,14 @@
+const crypto = require("crypto");
+
 const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
-const { message } = require("../util/util");
+const { message, isAdmin, isMember, isValid, error } = require("../util/util");
 const Group = require("../models/group");
 const User = require("../models/user");
 const File = require("../models/file");
 const Message = require("../models/message");
-const user = require("../models/user");
-
-// FUNCTIONS
-
-const isMember = (req, group) =>
-  !(
-    // cheks if logged in user is a member of the group
-    (
-      (req.session.isLoggedIn &&
-        !req.session.user.groups.find(
-          (groupId) => groupId.toString() === group._id.toString()
-        ) === -1) ||
-      // checks if the guest user who is in a group has access to the desired group
-      (req.session.isInGroup &&
-        req.session.group._id.toString() !== group._id.toString()) ||
-      // checks if the user is neither logged in nor is member of a group
-      (!req.session.isInGroup && !req.session.isLoggedIn)
-    )
-  );
-
-const isValid = (id) => mongoose.Types.ObjectId.isValid(id);
-
-const isAdmin = (req, group) =>
-  group.admins.find(
-    (userId) => userId.toString() === req.session.user._id.toString()
-  ) !== -1;
-
-const error = (title, message) => {
-  const error = new Error(message);
-  error.title = title;
-  throw error;
-};
-
-// MIDDLEWARES
 
 exports.homePage = async (req, res, next) => {
   try {
@@ -54,15 +22,15 @@ exports.homePage = async (req, res, next) => {
 
 exports.getJoin = async (req, res, next) => {
   try {
-    const errors = req.flash("error");
-    const message = req.flash("message");
+    const error = req.flash("error")[0];
+    const message = req.flash("message")[0];
 
     res.render("main/join", {
       pageTitle: "Join Group",
-      error: errors[0]?.message,
-      message: message[0] || null,
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      error: error?.message,
+      message: message || null,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -74,7 +42,8 @@ exports.postJoin = async (req, res, next) => {
     const { code, password } = req.body;
 
     const group = await Group.findOne({ code });
-    if (group == null) {
+
+    if (!group) {
       req.flash("error", {
         message: "Could not find a group with this ID",
         oldInput: { code, password },
@@ -99,11 +68,22 @@ exports.postJoin = async (req, res, next) => {
       });
     }
 
-    if (req.session.isLoggedIn) {
-      const user = await User.findById(req.session.user._id);
-      if (user != null && !user.groups.includes(group._id)) {
+    if (req.session?.isLoggedIn) {
+      const userId = req.session?.user._id;
+
+      const user = await User.findById(userId);
+
+      if (!user)
+        error(
+          "Invalid Param",
+          "Could not find a user with the ID from the request"
+        );
+
+      if (!user.groups.includes(group._id)) {
         user.groups.push(group._id);
         await user.save();
+        group.participants.push(user._id);
+        await group.save();
       }
     } else {
       req.session.isInGroup = true;
@@ -111,7 +91,7 @@ exports.postJoin = async (req, res, next) => {
     }
 
     req.session.save((err) => {
-      res.redirect(`/groups/${group._id.toString()}`);
+      res.redirect(`/group/${group._id.toString()}`);
     });
   } catch (err) {
     next(err);
@@ -120,13 +100,13 @@ exports.postJoin = async (req, res, next) => {
 
 exports.getCreateGroup = async (req, res, next) => {
   try {
-    const errors = req.flash("error");
+    const error = req.flash("error")[0];
 
     res.render("main/create-group", {
       pageTitle: "Create Group",
-      error: errors[0]?.message,
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      error: error?.message,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -154,9 +134,19 @@ exports.postCreateGroup = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.session.user._id);
+    const userId = req.session?.user._id;
+
+    const user = await User.findById(userId);
+
+    if (!user)
+      error(
+        "Invalid Param",
+        "Could not find a user with the ID from the request"
+      );
 
     const hashedPw = await bcrypt.hash(password, 12);
+
+    const code = await crypto.randomBytes(4);
 
     const group = await Group.create({
       name,
@@ -165,6 +155,9 @@ exports.postCreateGroup = async (req, res, next) => {
       owner: user._id,
       admins: [user._id],
       messages: [],
+      pendingMessages: [],
+      participants: [user._id],
+      code: code.toString("hex"),
     });
 
     user.groups.push(group._id);
@@ -176,33 +169,18 @@ exports.postCreateGroup = async (req, res, next) => {
   }
 };
 
-exports.message = async (req, res, next) => {
-  try {
-    const messageObj = req.flash("message")[0];
-
-    res.render("main/message", {
-      pageTitle: messageObj?.pageTitle,
-      message: messageObj?.message,
-      isSuccess: messageObj?.isSuccess,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
 exports.getGroups = async (req, res, next) => {
   try {
-    const user = await User.findById(req.session.user._id)
+    const userId = req.session?.user._id;
+
+    const user = await User.findById(userId)
       .lean()
       .populate("groups", "name description code");
 
     if (!user)
-      message(
-        req,
-        res,
-        "Invalid User",
-        "Could not fetch groups because user with this ID could not be found",
-        false
+      error(
+        "Invalid Param",
+        "Could not find a user with the ID from the request"
       );
 
     res.render("main/groups", {
@@ -218,15 +196,7 @@ exports.getGroup = async (req, res, next) => {
   try {
     const groupId = req.params.groupId;
 
-    if (!mongoose.Types.ObjectId.isValid(groupId)) {
-      return message(
-        req,
-        res,
-        "Invalid Param",
-        "Could not find a group with the id from url",
-        false
-      );
-    }
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
 
     const group = await Group.findById(groupId)
       .populate({
@@ -239,27 +209,22 @@ exports.getGroup = async (req, res, next) => {
       })
       .lean();
 
-    if (group == null)
-      return message(
-        req,
-        res,
-        "Invalid Param",
-        "Could not find a group with the id from url",
-        false
+    if (!group)
+      error(
+        "Group Not Found",
+        "Could not find a group with the ID from the url"
       );
 
     if (!isMember(req, group))
-      return message(
-        req,
-        res,
+      error(
         "Access Denied",
-        "You cannot access this group because you are not the member",
-        false
+        "You have to be a member of the group to be able to access it"
       );
 
     res.render("main/group", {
       pageTitle: group.name,
-      group: group,
+      isAdmin: isAdmin(req, group),
+      group,
     });
   } catch (err) {
     next(err);
@@ -270,11 +235,15 @@ exports.sendMessage = async (req, res, next) => {
   try {
     const groupId = req.body.groupId;
 
-    if (!isValid(groupId)) error("Invalid ID", "Group ID is invalid");
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
 
     const group = await Group.findById(groupId);
 
-    if (group == null) error("Group Not Found", "Could not find a group");
+    if (!group)
+      error(
+        "Group Not Found",
+        "Could not find a group with the ID from the request"
+      );
 
     if (!isMember(req, group))
       error(
@@ -282,14 +251,14 @@ exports.sendMessage = async (req, res, next) => {
         "You have to be a member of the group to be able to download and share files"
       );
 
-    if (!isAdmin(req, group))
-      error("Not Authorized", "You have to be admin to be able to share files");
+    const userId = req.session?.user._id;
 
     const notification = new Message({
       description: req.body.description,
-      sender: req.session.user._id,
+      sender: userId,
       group: group._id,
       files: [],
+      state: isAdmin(req, group) ? "sent" : "pending",
     });
 
     for (const fileData of req.files) {
@@ -305,7 +274,9 @@ exports.sendMessage = async (req, res, next) => {
 
     await notification.save();
 
-    group.messages.push(notification._id);
+    if (notification.state === "sent") group.messages.push(notification._id);
+    else if (notification.state === "pending")
+      group.pendingMessages.push(notification._id);
 
     await group.save();
 
@@ -317,28 +288,279 @@ exports.sendMessage = async (req, res, next) => {
 
 exports.download = async (req, res, next) => {
   try {
-    const file = await File.findById(req.params.fileId);
+    const fileId = req.params.fileId;
 
-    if (!file) {
-      return message(
-        req,
-        res,
-        "File Not Found",
-        "Could not download file because file could not be found",
-        false
-      );
-    }
+    if (!isValid(fileId)) error("Invalid Param", "Group ID is invalid");
 
-    if (!isMember(req, { _id: file.group._id }))
-      return message(
-        req,
-        res,
+    const file = await File.findById(req.params.fileId).populate(
+      "message",
+      "group state"
+    );
+
+    if (!file || file.message.state === "pending")
+      error("File Not Gound", "Could not find a file with the ID from the url");
+
+    if (!isMember(req, { _id: file.message.group }))
+      error(
         "Access Denied",
-        "You are not the member of the group where is this file shared",
-        false
+        "You have to be a member of the group to be able to download and share files"
       );
 
     res.download(file.path, file.filename);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMembers = async (req, res, next) => {
+  try {
+    const groupId = req.params.groupId;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+    const group = await Group.findById(groupId);
+
+    if (!group)
+      error(
+        "Group Not Gound",
+        "Could not find a group with the ID from the url"
+      );
+
+    if (!isMember(req, group))
+      error(
+        "Access Denied",
+        "You have to be a member of the group to be able to access it"
+      );
+
+    const isAdministrator = isAdmin(req, group);
+
+    await group.populate("participants", "username");
+
+    group.participants = group.participants.map((user) => ({
+      ...user,
+      isAdministrator: isAdmin(
+        { session: { isLoggedIn: true, user: { _id: user._id } } },
+        group
+      ),
+      isOwner: group.owner.toString() === user._id.toString(),
+    }));
+
+    res.render("main/members", {
+      pageTitle: "Members",
+      name: group.name,
+      groupId: group._id,
+      members: group.participants,
+      currentUser: {
+        isAdmin: isAdministrator,
+        isOwner: group.owner.toString() === req.session?.user._id.toString(),
+        _id: req.session?.user._id,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMessageRequests = async (req, res, next) => {
+  try {
+    const groupId = req.params.groupId;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+    const group = await Group.findById(groupId);
+
+    if (!group)
+      error(
+        "Group Not Gound",
+        "Could not find a group with the ID from the url"
+      );
+
+    if (!isMember(req, group))
+      error(
+        "Access Denied",
+        "You have to be a member of the group to be able to access it"
+      );
+
+    if (!isAdmin(req, group))
+      error("Not Authorized", "Only admins can review message requests");
+
+    await group.populate({
+      path: "pendingMessages",
+      select: "description files createdAt",
+      populate: [
+        { path: "sender", select: "name" },
+        { path: "files", select: "filename" },
+      ],
+    });
+
+    res.render("main/pending-messages.ejs", {
+      pageTitle: "Message Requests",
+      messages: group.pendingMessages,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.removeUser = async (req, res, next) => {
+  try {
+    const groupId = req.body.groupId;
+    const currentUserId = req.session?.user._id;
+    const removedUserId = req.body.userId;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+    if (!isValid(currentUserId)) error("Invalid Param", "User ID is invalid");
+    if (!isValid(removedUserId)) error("Invalid Param", "User ID is invalid");
+
+    const group = await Group.findById(groupId);
+    const removedUser = await User.findById(removedUserId);
+    const currentUser = await User.findById(currentUserId);
+
+    if (!group)
+      error(
+        "Group Not Gound",
+        "Could not find a group with the ID from the url"
+      );
+
+    if (!currentUser || !removedUser)
+      error("User Not Gound", "Could not find a user with the ID from the url");
+
+    if (!isMember(req, group))
+      error(
+        "Access Denied",
+        "You have to be a member of the group to be able to manage users"
+      );
+
+    if (
+      !isMember(
+        {
+          session: {
+            isLoggedIn: true,
+            user: { _id: new mongoose.Types.ObjectId(removedUserId) },
+          },
+        },
+        group
+      )
+    )
+      error(
+        "Access Denied",
+        "You can't remove a user who's not a member of the group"
+      );
+
+    if (!isAdmin(req, group))
+      error("Not Authorized", "Only admins can manage users");
+
+    const isAdministrator = isAdmin(
+      { session: { isLoggedIn: true, user: { _id: removedUserId } } },
+      group
+    );
+
+    if (group.owner.toString() === removedUserId.toString())
+      error("Invalid Action", "Owner can't be removed from the group");
+
+    if (
+      isAdministrator &&
+      group.owner.toString() !== currentUser._id.toString()
+    )
+      error(
+        "Invalid Action",
+        "Only owner can remove administrators from the group"
+      );
+
+    if (removedUser.toString() === group.owner._id.toString())
+      error("Owner can't be removed from group");
+
+    group.participants.pull({
+      _id: new mongoose.Types.ObjectId(removedUserId),
+    });
+
+    if (isAdministrator)
+      group.admins.pull({ _id: new mongoose.Types.ObjectId(removedUserId) });
+
+    removedUser.groups.pull({
+      _id: new mongoose.Types.ObjectId(groupId),
+    });
+
+    await group.save();
+    await removedUser.save();
+
+    res.redirect(`/group/${groupId.toString()}/members`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.addAdmin = async (req, res, next) => {
+  try {
+    const userId = req.body.userId;
+    const groupId = req.body.groupId;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+    if (!isValid(userId)) error("Invalid Param", "User ID is invalid");
+
+    const group = await Group.findById(groupId);
+    const user = await User.findById(userId);
+
+    if (!group)
+      error(
+        "Group Not Gound",
+        "Could not find a group with the ID from the url"
+      );
+
+    if (!user)
+      error("User Not Found", "Could not find a user with the ID from the url");
+
+    if (!isMember(req, group))
+      error(
+        "Access Denied",
+        "You have to be a member of the group to be able to manage users"
+      );
+
+    if (
+      !isMember({ session: { isLoggedIn: true, user: { _id: userId } } }, group)
+    )
+      error(
+        "Invalid Action",
+        "User you tried to add to admins is not a member of the group"
+      );
+
+    if (req.session?.user._id.toString() !== group.owner.toString())
+      error("Unauthorized", "Only owners can add admins");
+
+    if (
+      group.admins.find((user) => user.toString() === userId.toString()) != null
+    )
+      error(
+        "Invalid Action",
+        "User you tried to add to admins is already an administrator"
+      );
+
+    group.admins.push(user._id);
+
+    await group.save();
+
+    res.redirect(`/group/${groupId.toString()}/members`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.message = async (req, res, next) => {
+  try {
+    let message = req.flash("message")[0];
+
+    if (!message)
+      message = {
+        pageTitle: "Message",
+        message: "This page is used for displaying server messages",
+        isSuccess: true,
+      };
+
+    res.render("main/message", {
+      pageTitle: message?.pageTitle,
+      message: message?.message,
+      isSuccess: message?.isSuccess,
+    });
   } catch (err) {
     next(err);
   }

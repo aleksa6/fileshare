@@ -1,0 +1,38 @@
+<%- include("../includes/head.ejs")%>
+<link rel="stylesheet" href="/public/css/groups.css">
+
+  </head>
+
+  <body>
+
+    <%- include("../includes/navigation.ejs")%>
+    
+    <main>
+      <h3 style="margin: 0 1rem; color: purple;"><a href="/group/<%= groupId %>" style="color: green;"><%= name %></a> members</h3>
+        <ul>
+          <% members.forEach(member => { %>
+            <li id="momir" style="cursor: default;">
+              <p style="font-size: medium; font-weight: medium;"><%= member._doc.username %>  </span><span style="color: green;"><%= member.isOwner ? "owner" : member.isAdministrator ? "admin" : "member" %> <span style="color: purple;"><%= currentUser._id.toString() === member._doc._id.toString() ? "(ME)" : "" %></span></span></p>
+              <% if ((currentUser.isOwner && !member.isOwner) || (!member.isAdministrator && currentUser.isAdmin && member._doc._id.toString() !== currentUser._id.toString())) { %>
+                <div>
+                  <form action="/remove" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="userId" value="<%= member._doc._id %>">
+                    <input type="hidden" name="groupId" value="<%= groupId %>">
+                    <button class="admin_ops" type="submit">Remove</button>
+                  </form>
+                  <% if (!member.isAdministrator) { %>
+                    <form action="/add-admin" method="POST">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="userId" value="<%= member._doc._id %>">
+                      <input type="hidden" name="groupId" value="<%= groupId %>">
+                      <button class="admin_ops" type="submit">Make Admin</button>
+                    </form>
+                  <% } %>
+                </div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+    </main>
+    <%- include('../includes/end.ejs') %>

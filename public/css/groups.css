@@ -12,7 +12,7 @@ body {
 }
 
 main {
-  height: 80vh;
+  height: 100vh;
   display: block;
   justify-content: left;
   text-align: left;
@@ -43,9 +43,13 @@ main ul li a {
 }
 
 main ul.msg-border {
-  margin: 0.5rem;
+  margin: 1rem;
   border-radius: 5px;
   border: 1.5px solid purple;
+}
+
+main ul.msg-border:last-of-type {
+  margin-bottom: 1rem;
 }
 
 main ul.msg-border h3:first-of-type {
@@ -81,5 +85,193 @@ main ul.msg-border h3:last-of-type {
 #share:hover {
   background-color: purple;
   color: white;
+  transition: 0.2s;
+}
+
+#share_form {
+  margin-left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: left;
+  margin-bottom: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+#share_form input,
+textarea,
+button {
+  margin: 0.25rem 0.5rem;
+}
+
+#share_form textarea {
+  height: 200px;
+  width: 45%;
+  padding: 0.25rem;
+  border: 1px solid purple;
+  color: purple;
+  border-radius: 10px;
+}
+
+#share_form input[type="file"] {
+  border: 1px solid purple;
+  padding: 0.25rem;
+  border-radius: 10px;
+  width: 300px;
+  color: green;
+}
+
+#share_form input[type="file"]::-webkit-file-upload-button {
+  border-radius: 10px;
+  color: purple;
+  border: 0.25px solid purple;
+  background: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#share_form input[type="file"]::-webkit-file-upload-button:hover {
+  border-radius: 10px;
+  color: white;
+  opacity: 0.6;
+  background: purple;
+  transition: 0.2s;
+}
+
+#share_form textarea::placeholder {
+  opacity: 0.3;
+  color: purple;
+}
+
+#share_form textarea:focus {
+  outline: none;
+  border: 1px solid purple;
+}
+
+#share_form button {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: white;
+  color: purple;
+  border-radius: 10px;
+  width: 150px;
+  padding: 0.75rem 1.25rem;
+  opacity: 0.6;
+  transition: 0.2s;
+  border: 1px solid purple;
+  cursor: pointer;
+}
+
+#share_form button:hover {
+  background-color: purple;
+  color: white;
+  transition: 0.2s;
+}
+
+.admin_button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid purple;
+  border-radius: 10px;
+  cursor: pointer;
+  color: purple;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  transition: 0.2s;
+}
+
+.admin_button:hover {
+  background-color: purple;
+  color: white;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+.unfocusable:focus {
+  outline: none;
+}
+
+#momir {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+}
+
+#momir div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#momir p {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0.5rem 0;
+}
+
+.admin_ops {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0.5rem 1rem;
+  color: purple;
+  opacity: 1;
+  border-radius: 10px;
+  border: 1px solid purple;
+  background-color: white;
+  cursor: pointer;
+}
+
+.admin_ops:hover {
+  color: white;
+  background-color: purple;
+  opacity: 0.6;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  text-align: center;
+  margin: -0.25rem 0 0.5rem 0.5rem;
+}
+
+.options button {
+  padding: 0.5rem 1rem;
+  opacity: 1;
+  border-radius: 10px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.options form:last-of-type button {
+  border: 1px solid red;
+  background-color: red;
+  color: white;
+  transition: 0.2s;
+  opacity: 0.6;
+}
+
+.options form:last-of-type button:hover {
+  background-color: red;
+  background-color: white;
+  color: red;
+  transition: 0.2s;
+}
+
+.options form:first-of-type button {
+  border: 1px solid green;
+  color: white;
+  background-color: green;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+.options form:first-of-type button:hover {
+  background-color: white;
+  color: green;
   transition: 0.2s;
 }

@@ -44,3 +44,7 @@ main {
   border-radius: 5px;
   font-size: medium;
 }
+
+textarea {
+  resize: none;
+}

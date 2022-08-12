@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 
-const { message } = require("../util/util");
+const { message, updateNames } = require("../util/util");
 const User = require("../models/user");
 
 const transporter = nodemailer.createTransport(
@@ -18,13 +18,13 @@ const transporter = nodemailer.createTransport(
 
 exports.getSignup = async (req, res, next) => {
   try {
-    const errors = req.flash("error");
+    const error = req.flash("error")[0];
 
     res.render("auth/signup", {
       pageTitle: "Signup",
-      error: errors[0]?.message,
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      error: error?.message,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -48,10 +48,15 @@ exports.postSignup = async (req, res, next) => {
     }
 
     const hashedPw = await bcrypt.hash(password, 12);
-    const user = await User.create({
+
+    const id = updateNames(name);
+    const username = `${name}#${id.toString().padStart(4, 0)}`;
+
+    await User.create({
       name,
       email,
       password: hashedPw,
+      username,
       groups: [],
     });
 
@@ -67,15 +72,15 @@ exports.postSignup = async (req, res, next) => {
 
 exports.getLogin = async (req, res, next) => {
   try {
-    const errors = req.flash("error");
-    const message = req.flash("message");
+    const error = req.flash("error")[0];
+    const message = req.flash("message")[0];
 
     res.render("auth/login", {
       pageTitle: "Login",
-      message: message[0] || null,
-      error: errors[0]?.message,
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      message: message || null,
+      error: error?.message,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -99,7 +104,7 @@ exports.postLogin = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email });
-    if (user == null) {
+    if (!user) {
       req.flash("error", {
         message: "User with this email address does not exist. Try to signup",
         oldInput: { email, password },
@@ -111,6 +116,7 @@ exports.postLogin = async (req, res, next) => {
     }
 
     const isEqual = await bcrypt.compare(password, user.password);
+
     if (!isEqual) {
       req.flash("error", {
         message: "Wrong password. Try again",
@@ -137,15 +143,15 @@ exports.postLogin = async (req, res, next) => {
 
 exports.getReset = async (req, res, next) => {
   try {
-    const errors = req.flash("error");
-    const message = req.flash("message");
+    const error = req.flash("error")[0];
+    const message = req.flash("message")[0];
 
     res.render("auth/reset", {
       pageTitle: "Reset password",
-      message: message[0] || null,
-      error: errors[0]?.message,
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      message: message || null,
+      error: error?.message,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -172,7 +178,8 @@ exports.postReset = async (req, res, next) => {
     const token = buffer.toString("hex");
 
     const user = await User.findOne({ email });
-    if (user != null) {
+
+    if (user) {
       user.resetToken = token;
       user.resetTokenExpiration = Date.now() + 3600000;
       await user.save();
@@ -192,7 +199,7 @@ exports.postReset = async (req, res, next) => {
       req,
       res,
       "Reset Link Sent",
-      "We just sent a message to the email you provided with a link to reset your password. Please check your inbox",
+      "We just sent an email that contains your password reset link",
       true
     );
   } catch (err) {
@@ -207,7 +214,7 @@ exports.getNewPassword = async (req, res, next) => {
       resetToken: token,
       resetTokenExpiration: { $gt: Date.now() },
     });
-    if (user == null) {
+    if (!user)
       return message(
         req,
         res,
@@ -215,17 +222,16 @@ exports.getNewPassword = async (req, res, next) => {
         "Reset token expired or is invalid",
         false
       );
-    }
 
-    const errors = req.flash("error");
+    const error = req.flash("error")[0];
 
     res.render("auth/new-password", {
       pageTitle: "Change Password",
-      error: errors[0]?.message,
+      error: error?.message,
       token,
       userId: user._id.toString(),
-      oldInput: errors[0]?.oldInput,
-      fields: errors[0]?.fields,
+      oldInput: error?.oldInput,
+      fields: error?.fields,
     });
   } catch (err) {
     next(err);
@@ -253,7 +259,7 @@ exports.postNewPassword = async (req, res, next) => {
       resetTokenExpiration: { $gt: Date.now() },
     });
 
-    if (user == null) {
+    if (!user)
       return message(
         req,
         res,
@@ -261,7 +267,6 @@ exports.postNewPassword = async (req, res, next) => {
         "Reset token expired or is invalid",
         false
       );
-    }
 
     const newPassword = await bcrypt.hash(password, 12);
     user.password = newPassword;

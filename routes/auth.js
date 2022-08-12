@@ -22,14 +22,13 @@ router.post(
   [
     check("name")
       .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Name should not be empty"),
+      .isLength({ min: 2, max: 28 })
+      .withMessage("Name should contain from 2 to 28 characters"),
     check("email")
       .isEmail()
       .normalizeEmail()
       .trim()
-      .withMessage("Please enter a valid email.")
+      .withMessage("Please enter a valid email")
       .custom((value, { req }) => {
         return User.findOne({ email: value }).then((userDoc) => {
           if (userDoc) {
@@ -104,18 +103,5 @@ router.post(
 );
 
 router.get("/logout", isAuth, authController.logout);
-
-// router.post("/request-password-reset", authController.requestPasswordReset);
-
-// router.post(
-//   "/reset-password",
-//   [
-//     check("password")
-//       .trim()
-//       .isLength({ min: 10 })
-//       .withMessage("Password should be at least 10 characters longs."),
-//   ],
-//   authController.resetPassword
-// );
 
 module.exports = router;

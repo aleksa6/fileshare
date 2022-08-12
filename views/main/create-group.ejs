@@ -18,8 +18,6 @@
         <input type="text" class="<%= error != null && fields.includes('description') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.description : ''%>" placeholder="Description" name="description">
         <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password">
         <input type="password" class="<%= error != null && fields.includes('passwordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.passwordConf : ''%>" placeholder="Confirm password" name="passwordConf">
-        <input type="password" class="<%= error != null && fields.includes('adminPassword') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.adminPassword : ''%>" placeholder="Admin password" name="adminPassword">
-        <input type="password" class="<%= error != null && fields.includes('adminPasswordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.adminPasswordConf : ''%>" placeholder="Confirm admin password" name="adminPasswordConf">
         <button type="submit">Create</button>
       </form>
       

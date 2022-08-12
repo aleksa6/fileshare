@@ -8,7 +8,7 @@ const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
 
 const groupController = require("../controllers/groups");
-const { /* upload, */ isAuth } = require("../middlewares/middlewares");
+const { isAuth } = require("../middlewares/middlewares");
 
 const joinLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -19,6 +19,9 @@ const joinLimiter = rateLimit({
 });
 
 const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "..", "files"));
+  },
   filename: (req, file, cb) => {
     const name = `${uuidv4()}.${file.originalname.split(".").slice(-1)}`;
     cb(null, name);
@@ -34,7 +37,7 @@ const fileStorage = multer.diskStorage({
   },
 });
 
-const upload = multer({ dest: "files", storage: fileStorage });
+const upload = multer({ storage: fileStorage });
 
 router.get("/", groupController.homePage);
 
@@ -58,24 +61,12 @@ router.post(
       .trim()
       .isLength({ min: 8 })
       .withMessage("Password should be at least 8 characters long"),
-    check("adminPassword")
-      .trim()
-      .isLength({ min: 8 })
-      .withMessage("Password should be at least 8 characters long"),
     check("passwordConf")
       .trim()
       .isLength({ min: 8 })
       .custom((value, { req }) => {
         if (value !== req.body.password)
           throw new Error("Passwords do not match");
-        return true;
-      }),
-    check("adminPasswordConf")
-      .trim()
-      .isLength({ min: 8 })
-      .custom((value, { req }) => {
-        if (value !== req.body.adminPassword)
-          throw new Error("Admin passwords do not match");
         return true;
       }),
   ],
@@ -89,6 +80,17 @@ router.get("/group/:groupId", groupController.getGroup);
 router.get("/file/:fileId", groupController.download);
 
 router.post("/send-message", isAuth, upload.any(), groupController.sendMessage);
+
+router.get("/group/:groupId/members", groupController.getMembers);
+
+router.get(
+  "/group/:groupId/message-requests",
+  groupController.getMessageRequests
+);
+
+router.post("/remove", groupController.removeUser);
+
+router.post("/add-admin", groupController.addAdmin)
 
 router.get("/message", groupController.message);
 
