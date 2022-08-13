@@ -64,7 +64,7 @@ exports.upload = async (req, res, next) => {
       }
     };
 
-    req.on("close", (err) => {
+    req.on("aborted", (err) => {
       setImmediate(abortHandler);
     });
 

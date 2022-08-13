@@ -92,6 +92,8 @@ router.post("/remove", groupController.removeUser);
 
 router.post("/add-admin", groupController.addAdmin)
 
+router.post("/remove-admin", groupController.removeAdmin)
+
 router.get("/message", groupController.message);
 
 module.exports = router;

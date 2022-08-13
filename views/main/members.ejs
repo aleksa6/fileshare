@@ -26,7 +26,14 @@
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <input type="hidden" name="userId" value="<%= member._doc._id %>">
                       <input type="hidden" name="groupId" value="<%= groupId %>">
-                      <button class="admin_ops" type="submit">Make Admin</button>
+                      <button class="admin_ops" type="submit" style="width: 124px;">Make Admin</button>
+                    </form>
+                  <% } else { %>
+                    <form action="/remove-admin" method="POST">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="userId" value="<%= member._doc._id %>">
+                      <input type="hidden" name="groupId" value="<%= groupId %>">
+                      <button class="admin_ops" type="submit">Remove Admin</button>
                     </form>
                   <% } %>
                 </div>

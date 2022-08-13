@@ -280,7 +280,13 @@ exports.sendMessage = async (req, res, next) => {
 
     await group.save();
 
-    res.redirect(`/group/${group._id.toString()}`);
+    message(
+      req,
+      res,
+      "Request Sent",
+      "Message request successfully sent",
+      true
+    );
   } catch (err) {
     next(err);
   }
@@ -405,16 +411,13 @@ exports.getMessageRequests = async (req, res, next) => {
 exports.removeUser = async (req, res, next) => {
   try {
     const groupId = req.body.groupId;
-    const currentUserId = req.session?.user._id;
-    const removedUserId = req.body.userId;
+    const userId = req.body.userId;
 
     if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
-    if (!isValid(currentUserId)) error("Invalid Param", "User ID is invalid");
-    if (!isValid(removedUserId)) error("Invalid Param", "User ID is invalid");
+    if (!isValid(userId)) error("Invalid Param", "User ID is invalid");
 
     const group = await Group.findById(groupId);
-    const removedUser = await User.findById(removedUserId);
-    const currentUser = await User.findById(currentUserId);
+    const user = await User.findById(userId);
 
     if (!group)
       error(
@@ -422,7 +425,7 @@ exports.removeUser = async (req, res, next) => {
         "Could not find a group with the ID from the url"
       );
 
-    if (!currentUser || !removedUser)
+    if (!user)
       error("User Not Gound", "Could not find a user with the ID from the url");
 
     if (!isMember(req, group))
@@ -436,7 +439,7 @@ exports.removeUser = async (req, res, next) => {
         {
           session: {
             isLoggedIn: true,
-            user: { _id: new mongoose.Types.ObjectId(removedUserId) },
+            user: { _id: new mongoose.Types.ObjectId(userId) },
           },
         },
         group
@@ -451,38 +454,38 @@ exports.removeUser = async (req, res, next) => {
       error("Not Authorized", "Only admins can manage users");
 
     const isAdministrator = isAdmin(
-      { session: { isLoggedIn: true, user: { _id: removedUserId } } },
+      { session: { isLoggedIn: true, user: { _id: userId } } },
       group
     );
 
-    if (group.owner.toString() === removedUserId.toString())
+    if (group.owner.toString() === userId.toString())
       error("Invalid Action", "Owner can't be removed from the group");
 
     if (
       isAdministrator &&
-      group.owner.toString() !== currentUser._id.toString()
+      group.owner.toString() !== req.session?.user._id.toString()
     )
       error(
         "Invalid Action",
         "Only owner can remove administrators from the group"
       );
 
-    if (removedUser.toString() === group.owner._id.toString())
+    if (user.toString() === group.owner._id.toString())
       error("Owner can't be removed from group");
 
     group.participants.pull({
-      _id: new mongoose.Types.ObjectId(removedUserId),
+      _id: new mongoose.Types.ObjectId(userId),
     });
 
     if (isAdministrator)
-      group.admins.pull({ _id: new mongoose.Types.ObjectId(removedUserId) });
+      group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
 
-    removedUser.groups.pull({
+    user.groups.pull({
       _id: new mongoose.Types.ObjectId(groupId),
     });
 
     await group.save();
-    await removedUser.save();
+    await user.save();
 
     res.redirect(`/group/${groupId.toString()}/members`);
   } catch (err) {
@@ -499,16 +502,12 @@ exports.addAdmin = async (req, res, next) => {
     if (!isValid(userId)) error("Invalid Param", "User ID is invalid");
 
     const group = await Group.findById(groupId);
-    const user = await User.findById(userId);
 
     if (!group)
       error(
         "Group Not Gound",
         "Could not find a group with the ID from the url"
       );
-
-    if (!user)
-      error("User Not Found", "Could not find a user with the ID from the url");
 
     if (!isMember(req, group))
       error(
@@ -525,17 +524,68 @@ exports.addAdmin = async (req, res, next) => {
       );
 
     if (req.session?.user._id.toString() !== group.owner.toString())
-      error("Unauthorized", "Only owners can add admins");
+      error("Unauthorized", "Only owners can manage admins");
 
     if (
-      group.admins.find((user) => user.toString() === userId.toString()) != null
+      isAdmin({ session: { isLoggedIn: true, user: { _id: userId } } }, group)
     )
       error(
         "Invalid Action",
         "User you tried to add to admins is already an administrator"
       );
 
-    group.admins.push(user._id);
+    group.admins.push(new mongoose.Types.ObjectId(userId));
+
+    await group.save();
+
+    res.redirect(`/group/${groupId.toString()}/members`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.removeAdmin = async (req, res, next) => {
+  try {
+    const userId = req.body.userId;
+    const groupId = req.body.groupId;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+    if (!isValid(userId)) error("Invalid Param", "User ID is invalid");
+
+    const group = await Group.findById(groupId);
+
+    if (!group)
+      error(
+        "Group Not Gound",
+        "Could not find a group with the ID from the url"
+      );
+
+    if (!isMember(req, group))
+      error(
+        "Access Denied",
+        "You have to be a member of the group to be able to manage users"
+      );
+
+    if (
+      !isMember({ session: { isLoggedIn: true, user: { _id: userId } } }, group)
+    )
+      error(
+        "Invalid Action",
+        "User you tried to remove from admins is not a member of the group"
+      );
+
+    if (req.session?.user._id.toString() !== group.owner.toString())
+      error("Unauthorized", "Only owners can manage admins");
+
+    if (
+      !isAdmin({ session: { isLoggedIn: true, user: { _id: userId } } }, group)
+    )
+      error(
+        "Invalid Action",
+        "User you tried to remove from admins is not an administrator"
+      );
+
+    group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
 
     await group.save();
 

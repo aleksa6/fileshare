@@ -171,6 +171,7 @@ button {
 
 .admin_button {
   padding: 0.5rem 1.25rem;
+  font-size: small;
   border: 1px solid purple;
   border-radius: 10px;
   cursor: pointer;
@@ -180,6 +181,10 @@ button {
   margin-bottom: 0.5rem;
   background-color: white;
   transition: 0.2s;
+}
+
+.admin_button.copy {
+  width: 144px;
 }
 
 .admin_button:hover {
@@ -248,30 +253,29 @@ button {
 }
 
 .options form:last-of-type button {
-  border: 1px solid red;
-  background-color: red;
-  color: white;
+  border: 1px solid rgb(255, 67, 67);
+  background-color: white;
+  color: rgb(255, 67, 67);
   transition: 0.2s;
   opacity: 0.6;
 }
 
 .options form:last-of-type button:hover {
-  background-color: red;
-  background-color: white;
-  color: red;
+  background-color: rgb(255, 67, 67);
+  color: white;
   transition: 0.2s;
 }
 
 .options form:first-of-type button {
   border: 1px solid green;
-  color: white;
-  background-color: green;
+  color: green;
+  background-color: white;
   opacity: 0.6;
   transition: 0.2s;
 }
 
 .options form:first-of-type button:hover {
-  background-color: white;
-  color: green;
+  background-color: green;
+  color: white;
   transition: 0.2s;
 }
