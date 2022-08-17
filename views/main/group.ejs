@@ -18,6 +18,13 @@
         <button type="submit" class="admin_button">Members</button>
       </form>
       <button class="admin_button copy">Copy Invite Code</button>
+      <% if (isAdmin) { %>
+        <form action="/delete-group" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
+          <button type="submit" class="admin_button delete_group">Delete Group</button>
+        </form>
+      <% } %>
       <hr>
       <form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
@@ -38,7 +45,7 @@
         <% }) %>
         <ul style="height: 0;"><li style="border: none; cursor: default; height: 0;"><a style="color: white; cursor: default; height: 0;">placeholder</a></li></ul>
       <% } else { %>
-        <h2 style="margin: .25rem 1rem; color: purple; opacity: 0.6">There are no files in this group at the moment. Be first to share file</h2>
+        <h2 style="margin: .25rem 1rem; color: purple; opacity: 0.6">There are no files in this group yet. Be first to share one</h2>
       <% } %>
     </main>
     <script>

@@ -73,6 +73,8 @@ router.post(
   groupController.postCreateGroup
 );
 
+router.post("/delete-group", groupController.deleteGroup)
+
 router.get("/groups", isAuth, groupController.getGroups);
 
 router.get("/group/:groupId", groupController.getGroup);

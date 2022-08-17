@@ -9,6 +9,7 @@ const Group = require("../models/group");
 const User = require("../models/user");
 const File = require("../models/file");
 const Message = require("../models/message");
+const { groupCollapsed } = require("console");
 
 exports.homePage = async (req, res, next) => {
   try {
@@ -164,6 +165,44 @@ exports.postCreateGroup = async (req, res, next) => {
     await user.save();
 
     message(req, res, "Group Created", "Group successfully created", true);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteGroup = async (req, res, next) => {
+  try {
+    const groupId = req.body.groupId;
+    const userId = req.session?.user._id;
+
+    if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+    const group = await Group.findById(groupId);
+
+    if (!group)
+      error(
+        "Group Not Found",
+        "Could not find a group with the ID from the request"
+      );
+
+    if (userId.toString() !== group.owner.toString())
+      error("Invalid Action", "Only owner of the group can delete it");
+
+    await User.updateMany(
+      { _id: { $in: group.participants } },
+      { $pull: { groups: group._id } }
+    );
+    await group.remove();
+
+    res.redirect("/groups");
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.leaveGroup = async (req, res, next) => {
+  try {
+    // code
   } catch (err) {
     next(err);
   }

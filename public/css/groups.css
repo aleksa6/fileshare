@@ -279,3 +279,15 @@ button {
   color: white;
   transition: 0.2s;
 }
+
+.delete_group {
+  background: rgb(255, 67, 67);
+  color: white;
+  border-color: rgb(255, 67, 67);
+  opacity: .6;
+}
+
+.delete_group:hover {
+  background: white;
+  color: rgb(255, 67, 67)
+}
