@@ -39,7 +39,7 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.use("/files", express.static(path.join(__dirname, "files")));
 app.use(
   session({
-    secret: "momirKraljLegendaIdol",
+		secret: process.ENV.SECRET,
     resave: false,
     saveUninitialized: false,
     store,
