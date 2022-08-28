@@ -25,6 +25,11 @@
           <button type="submit" class="admin_button delete_group">Delete Group</button>
         </form>
       <% } %>
+			<form action="/leave-group" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
+          <button type="submit" class="admin_button delete_group">Leave Group</button>
+			</form>
       <hr>
       <form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="groupId" value="<%= group._id.toString() %>">

@@ -47,6 +47,8 @@ router.post("/join", joinLimiter, groupController.postJoin);
 
 router.get("/create-group", isAuth, groupController.getCreateGroup);
 
+router.post("/leave-group", groupController.leaveGroup)
+
 router.post(
   "/create-group",
   [

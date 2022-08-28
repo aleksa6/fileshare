@@ -219,17 +219,30 @@ exports.leaveGroup = async (req, res, next) => {
 				"Could not find a group with the ID from the request"
 			);
 
+		await user.update({ $pull: { groups: new mongoose.Types.ObjectId(groupId) } })
+
 		group.participants.pull({ _id: new mongoose.Types.ObjectId(userId) });
-
-		const isAdministrator = isAdmin(req, group);
-
-		if (isAdministrator)
-			group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
+		group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
 
 		if (group.owner.toString() === userId.toString()) {
-			if (group.admins.length > 0) group.admins.push(participants[0]);
-			group.owner = group.admins[0]
+			if (group.participants.length < 1) {
+				await group.delete();
+				return message(
+					req,
+					res,
+					"Group Deleted",
+					"Group had 0 participants so it was deleted",
+					false
+				);
+			}
+
+			if (group.admins.length < 1) group.admins.push(group.participants[0]);
+			group.owner = group.admins[0];
 		}
+
+		await group.save();
+
+		res.redirect("/groups");
 	} catch (err) {
 		next(err);
 	}
