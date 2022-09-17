@@ -6,7 +6,7 @@
   <body>
 
     <%- include("../includes/navigation.ejs")%>
-    
+
     <main>
       <input type="hidden" name="code" value="<%= group.code %>">
       <% if (isAdmin) { %>
@@ -19,13 +19,13 @@
       </form>
       <button class="admin_button copy">Copy Invite Code</button>
       <% if (isAdmin) { %>
-        <form action="/delete-group" method="POST">
+        <form action="/delete-group" method="POST" class="confirm">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
           <button type="submit" class="admin_button delete_group">Delete Group</button>
         </form>
       <% } %>
-			<form action="/leave-group" method="POST">
+			<form action="/leave-group" method="POST" class="confirm">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
           <button type="submit" class="admin_button delete_group">Leave Group</button>
@@ -54,7 +54,7 @@
       <% } %>
     </main>
     <script>
-      const btn = document.querySelector(".admin_button.copy")
+			const btn = document.querySelector(".admin_button.copy")
       const code = document.querySelector("input[name=code]")
 
       btn.addEventListener("click", ev => {

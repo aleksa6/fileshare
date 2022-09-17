@@ -49,3 +49,19 @@ exports.error = (title, message) => {
   error.title = title;
   throw error;
 };
+
+exports.flat = (arr) => {
+  if (arr.every(el => !Array.isArray(el))) return arr
+  
+  const res = []
+  
+  for (let i = 0; i < arr.length; i++) {
+    if (Array.isArray(arr[i])) {
+      res.push(...this.flat(arr[i]))
+    } else {
+      res.push(arr[i])
+    }
+  }
+  
+  return res
+}

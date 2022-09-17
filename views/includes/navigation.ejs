@@ -1,7 +1,6 @@
 <nav>
   <ul>
     <li><a href="/join">Join group</a></li>
-    <li><a href="/create-group">Create group</a></li>
     <% if (!isLoggedIn) { %>
       <% if (isInGroup) { %>
         <li><a href="/groups/<%= group._id %>">Current Group</a></li>
@@ -9,8 +8,10 @@
       <li class="auth"><a href="/auth/login">Login</a></li>
       <li class="auth"><a href="/auth/signup">Signup</a></li>
     <% } else { %>
+    	<li><a href="/create-group">Create group</a></li>
       <li><a href="/groups">My groups</a></li>
       <li class="auth"><a href="/auth/logout">Logout</a></li>
+			<li class="auth"><a href="/auth/delete-account">Delete Account</a></li>
     <% } %>
   </ul>
 </nav>

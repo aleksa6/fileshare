@@ -18,7 +18,7 @@ const { message } = require("./util/util");
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 100,
-  standardHeaders: true,
+	standardHeaders: true,
   legacyHeaders: false,
   message: "Too many requests from same IP",
 });
@@ -39,7 +39,7 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.use("/files", express.static(path.join(__dirname, "files")));
 app.use(
   session({
-		secret: process.env.SECRET,
+    secret: process.env.SECRET,
     resave: false,
     saveUninitialized: false,
     store,
@@ -60,7 +60,8 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  res.locals.isLoggedIn = req.session.isLoggedIn;
+	res.locals.alertMessage = req.flash("alertMessage")[0] || null;
+	res.locals.isLoggedIn = req.session.isLoggedIn;
   res.locals.isInGroup = req.session.isInGroup;
   res.locals.group = req.session.group;
   res.locals.csrfToken = req.csrfToken();

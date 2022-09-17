@@ -1,3 +1,17 @@
+<script type="text/javascript">
+	const alertMessage = "<%= alertMessage %>";
+	if (alertMessage) alert(alertMessage);
+
+	const forms = document.querySelectorAll("form.confirm");
+	console.log(forms)
+	forms.forEach(form => {
+		form.addEventListener("submit", function (ev) {
+			ev.preventDefault();
+			const confirmed = confirm("Are you sure you want to proceed?");
+			if (confirmed) this.submit();
+		})
+	})
+</script>
 </body>
 
 </html>

@@ -190,7 +190,7 @@ exports.deleteGroup = async (req, res, next) => {
 			{ _id: { $in: group.participants } },
 			{ $pull: { groups: group._id } }
 		);
-		await group.remove();
+		await group.delete();
 
 		res.redirect("/groups");
 	} catch (err) {
@@ -219,28 +219,13 @@ exports.leaveGroup = async (req, res, next) => {
 				"Could not find a group with the ID from the request"
 			);
 
-		await user.update({ $pull: { groups: new mongoose.Types.ObjectId(groupId) } })
+		const deletedGroups = await Group.clearUserInfo(userId);
 
-		group.participants.pull({ _id: new mongoose.Types.ObjectId(userId) });
-		group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
-
-		if (group.owner.toString() === userId.toString()) {
-			if (group.participants.length < 1) {
-				await group.delete();
-				return message(
-					req,
-					res,
-					"Group Deleted",
-					"Group had 0 participants so it was deleted",
-					false
-				);
-			}
-
-			if (group.admins.length < 1) group.admins.push(group.participants[0]);
-			group.owner = group.admins[0];
-		}
-
-		await group.save();
+		if (deletedGroups.length > 0)
+			req.flash(
+				"alertMessage",
+				`Groups [${deletedGroups}] have been deleted because they were left with no members`
+			);
 
 		res.redirect("/groups");
 	} catch (err) {
@@ -354,18 +339,22 @@ exports.sendMessage = async (req, res, next) => {
 		await notification.save();
 
 		if (notification.state === "sent") group.messages.push(notification._id);
-		else if (notification.state === "pending")
-			group.pendingMessages.push(notification._id);
+		else group.pendingMessages.push(notification._id);
 
 		await group.save();
 
-		message(
-			req,
-			res,
-			"Request Sent",
-			"Message request successfully sent",
-			true
-		);
+		if (notification.state === "sent") {
+			req.flash("alertMessage", "Message is successfully sent");
+			res.redirect(`/group/${group._id.toString()}`);
+		} else {
+			message(
+				req,
+				res,
+				"Request Sent",
+				"Message request successfully sent",
+				true
+			);
+		}
 	} catch (err) {
 		next(err);
 	}

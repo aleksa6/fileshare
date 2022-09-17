@@ -22,7 +22,7 @@
                 <input type="hidden" name="messageId" value="<%= message.id %>">
                 <button type="submit">Approve</button>
               </form>
-              <form action="/reject-request" method="POST">
+              <form action="/reject-request" method="POST" class="confirm">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="messageId" value="<%= message.id %>">
                 <button type="submit">Reject</button>

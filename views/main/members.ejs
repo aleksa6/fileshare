@@ -15,7 +15,7 @@
               <p style="font-size: medium; font-weight: medium;"><%= member._doc.username %>  </span><span style="color: green;"><%= member.isOwner ? "owner" : member.isAdministrator ? "admin" : "member" %> <span style="color: purple;"><%= currentUser._id.toString() === member._doc._id.toString() ? "(ME)" : "" %></span></span></p>
               <% if ((currentUser.isOwner && !member.isOwner) || (!member.isAdministrator && currentUser.isAdmin && member._doc._id.toString() !== currentUser._id.toString())) { %>
                 <div>
-                  <form action="/remove" method="POST">
+                  <form action="/remove" method="POST" class="confirm">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="userId" value="<%= member._doc._id %>">
                     <input type="hidden" name="groupId" value="<%= groupId %>">
@@ -29,7 +29,7 @@
                       <button class="admin_ops" type="submit" style="width: 124px;">Make Admin</button>
                     </form>
                   <% } else { %>
-                    <form action="/remove-admin" method="POST">
+                    <form action="/remove-admin" method="POST" class="confirm">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <input type="hidden" name="userId" value="<%= member._doc._id %>">
                       <input type="hidden" name="groupId" value="<%= groupId %>">
