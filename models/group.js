@@ -2,7 +2,7 @@ const fs = require("fs");
 
 const mongoose = require("mongoose");
 
-const { flat } = require("../util/util");
+const { flat, getFiles } = require("../util/util");
 const User = require("./user");
 
 const Schema = mongoose.Schema;
@@ -19,41 +19,46 @@ const groupSchema = new Schema({
 	participants: [{ type: Schema.Types.ObjectId, ref: "User" }],
 });
 
-groupSchema.statics.clearUserInfo = async function (userId) {
-	userId = new mongoose.Types.ObjectId(userId);
+groupSchema.methods.removeUser = async function (userId) {
+	try {
+		this.participants.pull(userId);
+		this.admins.pull(userId);
 
-	const user = await User.findById(userId);
-	const groups = await Group.find({ participants: userId });
-
-	await user.update({ $pull: { groups: { $in: groups } } });
-
-	const deletedGroups = [];
-
-	for (const group of groups) {
-		group.participants.pull(userId);
-		group.admins.pull(userId);
-
-		if (group.participants.length < 1) {
-			await group.delete();
-			deletedGroups.push(group.name);
-			continue;
+		if (this.participants.length < 1) {
+			await this.delete();
+			return;
 		}
 
-		if (group.admins.length < 1) group.admins.push(group.participants[0]);
+		if (this.admins.length < 1) this.admins.push(this.participants[0]);
 
-		if (userId.toString() === group.owner.toString())
-			group.owner = group.admins[0];
+		if (userId.toString() === this.owner.toString())
+			this.owner = this.admins[0];
 
-		await group.save();
+		await this.save();
+	} catch (err) {
+		next(err);
 	}
-
-	return deletedGroups;
 };
 
 groupSchema.pre("remove", async function (next) {
 	try {
-		await this.populate("messages");
-		console.log(this);
+		await this.populate([
+			{
+				path: "messages",
+				select: "files",
+				populate: [{ path: "files", select: "path" }],
+			},
+			{
+				path: "pendingMessages",
+				select: "files",
+				populate: [{ path: "files", select: "path" }],
+			},
+		]);
+
+		const paths = getFiles(this);
+		for (const path of paths) fs.unlink(path, (err) => console.log(err));
+
+		next();
 	} catch (err) {
 		next(err);
 	}
@@ -76,25 +81,12 @@ groupSchema.pre("deleteMany", async function (next) {
 			])
 			.lean();
 
-		const paths = flat(
-			groups.reduce((files, group) => {
-				files.push(
-					...group.messages.map((message) =>
-						message.files.map((file) => file.path)
-					)
-				);
-				files.push(
-					...group.pendingMessages.map((message) =>
-						message.files.map((file) => file.path)
-					)
-				);
-				return files;
-			}, [])
-		);
+		const paths = groups.reduce((files, group) => {
+			files.push(getFiles(group));
+			return files;
+		}, []);
 
-		for (const path of paths) {
-			await fs.unlink(path, (err) => console.log(err));
-		}
+		for (const path of paths) fs.unlink(path, (err) => console.log(err));
 
 		next();
 	} catch (err) {

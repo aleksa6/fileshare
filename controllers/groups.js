@@ -1,9 +1,17 @@
 const crypto = require("crypto");
+
 const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
-const { message, isAdmin, isMember, isValid, error } = require("../util/util");
+const {
+	message,
+	isAdmin,
+	isMember,
+	isValid,
+	error,
+	clearFiles,
+} = require("../util/util");
 const Group = require("../models/group");
 const User = require("../models/user");
 const File = require("../models/file");
@@ -145,7 +153,7 @@ exports.postCreateGroup = async (req, res, next) => {
 
 		const hashedPw = await bcrypt.hash(password, 12);
 
-		const code = await crypto.randomBytes(4);
+		const code = crypto.randomBytes(4);
 
 		const group = await Group.create({
 			name,
@@ -186,11 +194,11 @@ exports.deleteGroup = async (req, res, next) => {
 		if (userId.toString() !== group.owner.toString())
 			error("Invalid Action", "Only owner of the group can delete it");
 
-		await User.updateMany(
-			{ _id: { $in: group.participants } },
-			{ $pull: { groups: group._id } }
-		);
 		await group.delete();
+		await User.updateMany(
+			{ _id: { $in: this.participants } },
+			{ $pull: { groups: this._id } }
+		);
 
 		res.redirect("/groups");
 	} catch (err) {
@@ -219,7 +227,7 @@ exports.leaveGroup = async (req, res, next) => {
 				"Could not find a group with the ID from the request"
 			);
 
-		const deletedGroups = await Group.clearUserInfo(userId);
+		const deletedGroups = await Group.removeUser(userId);
 
 		if (deletedGroups.length > 0)
 			req.flash(
@@ -298,6 +306,14 @@ exports.getGroup = async (req, res, next) => {
 exports.sendMessage = async (req, res, next) => {
 	try {
 		const groupId = req.body.groupId;
+
+		const errors = validationResult(req);
+
+		if (!errors.isEmpty()) {
+			req.flash("alertMessage", errors.array()[0].msg);
+			clearFiles(req);
+			return res.redirect(`/group/${groupId}`);
+		}
 
 		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
 

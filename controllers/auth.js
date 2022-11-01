@@ -11,11 +11,7 @@ const User = require("../models/user");
 const Group = require("../models/group");
 
 const transporter = nodemailer.createTransport(
-	sendgridTransport({
-		auth: {
-			api_key: process.env.SENDGRID_API_KEY,
-		},
-	})
+	sendgridTransport({ auth: { api_key: process.env.SENDGRID_API_KEY } })
 );
 
 exports.getSignup = async (req, res, next) => {
@@ -303,16 +299,7 @@ exports.deleteAccount = async (req, res, next) => {
 
 		if (!user) error("User Not Found", "Could not find a user");
 
-		await Group.deleteMany({ owner: new mongoose.Types.ObjectId(userId) });
-		await Group.updateMany(
-			{ _id: { $in: user.groups } },
-			{ $pull: { admins: userId, participants: userId } }
-		);
-		await user.delete();
-
-		req.session.destroy(() => {
-			res.redirect("/");
-		});
+		await user.deleteAccount();
 	} catch (err) {
 		next(err);
 	}

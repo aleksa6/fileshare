@@ -11,30 +11,30 @@ const groupController = require("../controllers/groups");
 const { isAuth } = require("../middlewares/middlewares");
 
 const joinLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Too many login requests made",
+	windowMs: 1 * 60 * 1000,
+	max: 10,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: "Too many login requests made",
 });
 
 const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "..", "files"));
-  },
-  filename: (req, file, cb) => {
-    const name = `${uuidv4()}.${file.originalname.split(".").slice(-1)}`;
-    cb(null, name);
+	destination: (req, file, cb) => {
+		cb(null, path.join(__dirname, "..", "files"));
+	},
+	filename: (req, file, cb) => {
+		const name = `${uuidv4()}.${file.originalname.split(".").slice(-1)}`;
+		cb(null, name);
 
-    req.on("aborted", () => {
-      file.stream.on("end", async () => {
-        await fs.unlink(path.join(__dirname, "..", "files", name), (err) =>
-          console.log(err)
-        );
-      });
-      file.stream.emit("end");
-    });
-  },
+		req.on("aborted", () => {
+			file.stream.on("end", async () => {
+				fs.unlink(path.join(__dirname, "..", "files", name), (err) =>
+					console.log(err)
+				);
+			});
+			file.stream.emit("end");
+		});
+	},
 });
 
 const upload = multer({ storage: fileStorage });
@@ -47,35 +47,35 @@ router.post("/join", joinLimiter, groupController.postJoin);
 
 router.get("/create-group", isAuth, groupController.getCreateGroup);
 
-router.post("/leave-group", groupController.leaveGroup)
+router.post("/leave-group", groupController.leaveGroup);
 
 router.post(
-  "/create-group",
-  [
-    check("name")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Name should not be empty")
-      .isLength({ max: 20 })
-      .withMessage("Name should not be longer than 20 characters"),
-    check("password")
-      .trim()
-      .isLength({ min: 8 })
-      .withMessage("Password should be at least 8 characters long"),
-    check("passwordConf")
-      .trim()
-      .isLength({ min: 8 })
-      .custom((value, { req }) => {
-        if (value !== req.body.password)
-          throw new Error("Passwords do not match");
-        return true;
-      }),
-  ],
-  groupController.postCreateGroup
+	"/create-group",
+	[
+		check("name")
+			.trim()
+			.not()
+			.isEmpty()
+			.withMessage("Name should not be empty")
+			.isLength({ max: 20 })
+			.withMessage("Name should not be longer than 20 characters"),
+		check("password")
+			.trim()
+			.isLength({ min: 8 })
+			.withMessage("Password should be at least 8 characters long"),
+		check("passwordConf")
+			.trim()
+			.isLength({ min: 8 })
+			.custom((value, { req }) => {
+				if (value !== req.body.password)
+					throw new Error("Passwords do not match");
+				return true;
+			}),
+	],
+	groupController.postCreateGroup
 );
 
-router.post("/delete-group", groupController.deleteGroup)
+router.post("/delete-group", groupController.deleteGroup);
 
 router.get("/groups", isAuth, groupController.getGroups);
 
@@ -83,20 +83,30 @@ router.get("/group/:groupId", groupController.getGroup);
 
 router.get("/file/:fileId", groupController.download);
 
-router.post("/send-message", isAuth, upload.any(), groupController.sendMessage);
+router.post(
+	"/send-message",
+	isAuth,
+	upload.any(),
+	check("description")
+		.trim()
+		.not()
+		.isEmpty()
+		.withMessage("You must provide description"),
+	groupController.sendMessage
+);
 
 router.get("/group/:groupId/members", groupController.getMembers);
 
 router.get(
-  "/group/:groupId/message-requests",
-  groupController.getMessageRequests
+	"/group/:groupId/message-requests",
+	groupController.getMessageRequests
 );
 
 router.post("/remove", groupController.removeUser);
 
-router.post("/add-admin", groupController.addAdmin)
+router.post("/add-admin", groupController.addAdmin);
 
-router.post("/remove-admin", groupController.removeAdmin)
+router.post("/remove-admin", groupController.removeAdmin);
 
 router.get("/message", groupController.message);
 
