@@ -50,22 +50,6 @@ exports.error = (title, message) => {
 	throw error;
 };
 
-exports.flat = (arr) => {
-	if (arr.every((el) => !Array.isArray(el))) return arr;
-
-	const res = [];
-
-	for (let i = 0; i < arr.length; i++) {
-		if (Array.isArray(arr[i])) {
-			res.push(...this.flat(arr[i]));
-		} else {
-			res.push(arr[i]);
-		}
-	}
-
-	return res;
-};
-
 exports.clearFiles = (req) => {
 	if (req.files && req.files.length > 0)
 		for (const file of req.files)
@@ -73,14 +57,7 @@ exports.clearFiles = (req) => {
 };
 
 exports.getFiles = (group) =>
-	group.messages
-		.reduce((messages, message) => {
-			messages.push(...message.files.map((file) => file.path));
-			return messages;
-		}, [])
-		.concat(
-			group.pendingMessages.reduce((messages, message) => {
-				messages.push(...message.files.map((file) => file.path));
-				return messages;
-			}, [])
-		);
+	group.messages.reduce((messages, message) => {
+		messages.push(...message.files.map((file) => file.path));
+		return messages;
+	}, []);

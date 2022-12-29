@@ -299,7 +299,7 @@ exports.deleteAccount = async (req, res, next) => {
 
 		if (!user) error("User Not Found", "Could not find a user");
 
-		await user.deleteAccount();
+		await user.deleteAccount(req, res);
 	} catch (err) {
 		next(err);
 	}

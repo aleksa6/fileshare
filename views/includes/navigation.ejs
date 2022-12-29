@@ -5,13 +5,13 @@
       <% if (isInGroup) { %>
         <li><a href="/groups/<%= group._id %>">Current Group</a></li>
       <% } %>
-      <li class="auth"><a href="/auth/login">Login</a></li>
-      <li class="auth"><a href="/auth/signup">Signup</a></li>
+			  <li class="auth"><a href="/auth/login">Login</a></li>
+        <li class="auth"><a href="/auth/signup">Signup</a></li>
     <% } else { %>
     	<li><a href="/create-group">Create group</a></li>
       <li><a href="/groups">My groups</a></li>
-      <li class="auth"><a href="/auth/logout">Logout</a></li>
-			<li class="auth"><a href="/auth/delete-account">Delete Account</a></li>
+			<li class="auth-btn"><form action="/auth/logout"><button type="submit">Logout</button></form></li>
+			<li class="auth-btn"><form action="/auth/delete-account"><button type="submit">Delete Account</button></form></li>
     <% } %>
   </ul>
 </nav>

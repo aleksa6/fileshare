@@ -93,8 +93,6 @@ app.use(async (error, req, res, next) => {
 mongoose
 	.connect(MONGODB_URI)
 	.then(async () => {
-		// app.listen(3000)
-		const group = (await Group.find())[0];
-		group.delete()
+		app.listen(3000)
 	})
 	.catch((err) => console.log(err));

@@ -2,8 +2,7 @@ const fs = require("fs");
 
 const mongoose = require("mongoose");
 
-const { flat, getFiles } = require("../util/util");
-const User = require("./user");
+const { getFiles } = require("../util/util");
 
 const Schema = mongoose.Schema;
 
@@ -15,7 +14,6 @@ const groupSchema = new Schema({
 	owner: { type: Schema.Types.ObjectId, ref: "User" },
 	admins: [{ type: Schema.Types.ObjectId, ref: "User" }],
 	messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
-	pendingMessages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
 	participants: [{ type: Schema.Types.ObjectId, ref: "User" }],
 });
 
@@ -26,7 +24,7 @@ groupSchema.methods.removeUser = async function (userId) {
 
 		if (this.participants.length < 1) {
 			await this.delete();
-			return;
+			return true;
 		}
 
 		if (this.admins.length < 1) this.admins.push(this.participants[0]);
@@ -35,6 +33,8 @@ groupSchema.methods.removeUser = async function (userId) {
 			this.owner = this.admins[0];
 
 		await this.save();
+
+		return false;
 	} catch (err) {
 		next(err);
 	}
@@ -42,18 +42,11 @@ groupSchema.methods.removeUser = async function (userId) {
 
 groupSchema.pre("remove", async function (next) {
 	try {
-		await this.populate([
-			{
-				path: "messages",
-				select: "files",
-				populate: [{ path: "files", select: "path" }],
-			},
-			{
-				path: "pendingMessages",
-				select: "files",
-				populate: [{ path: "files", select: "path" }],
-			},
-		]);
+		await this.populate({
+			path: "messages",
+			select: "files",
+			populate: [{ path: "files", select: "path" }],
+		});
 
 		const paths = getFiles(this);
 		for (const path of paths) fs.unlink(path, (err) => console.log(err));
@@ -67,18 +60,11 @@ groupSchema.pre("remove", async function (next) {
 groupSchema.pre("deleteMany", async function (next) {
 	try {
 		const groups = await Group.find(this._conditions)
-			.populate([
-				{
-					path: "messages",
-					select: "files",
-					populate: [{ path: "files", select: "path" }],
-				},
-				{
-					path: "pendingMessages",
-					select: "files",
-					populate: [{ path: "files", select: "path" }],
-				},
-			])
+			.populate({
+				path: "messages",
+				select: "files",
+				populate: [{ path: "files", select: "path" }],
+			})
 			.lean();
 
 		const paths = groups.reduce((files, group) => {

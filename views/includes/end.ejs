@@ -3,7 +3,6 @@
 	if (alertMessage) alert(alertMessage);
 
 	const forms = document.querySelectorAll("form.confirm");
-	console.log(forms)
 	forms.forEach(form => {
 		form.addEventListener("submit", function (ev) {
 			ev.preventDefault();
@@ -11,6 +10,7 @@
 			if (confirmed) this.submit();
 		})
 	})
+
 </script>
 </body>
 

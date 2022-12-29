@@ -6,7 +6,7 @@ nav {
 nav ul li {
   list-style-type: none;
   display: inline-block;
-  margin: 0.75rem;
+  margin: 0.5rem;
   cursor: pointer;
 }
 
@@ -25,6 +25,25 @@ nav ul .auth:hover {
 
 nav ul .auth a {
   color: white;
+  opacity: 1;
+}
+
+nav ul .auth-btn button {
+	margin: 0;
+	font-family: sans-serif;
+	font-size: large;
+	font-weight: bold;
+  background-color: purple;
+	color: white;
+	border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+nav ul .auth-btn button:hover {
+  transition: 0.2s;
   opacity: 1;
 }
 

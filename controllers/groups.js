@@ -86,8 +86,12 @@ exports.postJoin = async (req, res, next) => {
 					"Could not find a user with the ID from the request"
 				);
 
-			if (!user.groups.includes(group._id)) {
-				user.groups.push(group._id);
+			if (
+				user.groups.findIndex(
+					(obj) => obj._id.toString() === group._id.toString()
+				) === -1
+			) {
+				user.groups.push({ _id: group._id, personalStorage: [] });
 				await user.save();
 				group.participants.push(user._id);
 				await group.save();
@@ -162,12 +166,11 @@ exports.postCreateGroup = async (req, res, next) => {
 			owner: user._id,
 			admins: [user._id],
 			messages: [],
-			pendingMessages: [],
 			participants: [user._id],
 			code: code.toString("hex"),
 		});
 
-		user.groups.push(group._id);
+		user.groups.push({ _id: group._id, personalStorage: [] });
 		await user.save();
 
 		message(req, res, "Group Created", "Group successfully created", true);
@@ -221,18 +224,22 @@ exports.leaveGroup = async (req, res, next) => {
 				"User Not Found",
 				"Could not find a user with the ID from the request"
 			);
+
 		if (!group)
 			error(
 				"Group Not Found",
 				"Could not find a group with the ID from the request"
 			);
 
-		const deletedGroups = await Group.removeUser(userId);
+		const isDeleted = await group.removeUser(userId);
 
-		if (deletedGroups.length > 0)
+		user.groups.pull({ _id: group._id });
+		await user.save();
+
+		if (isDeleted)
 			req.flash(
 				"alertMessage",
-				`Groups [${deletedGroups}] have been deleted because they were left with no members`
+				`Group have been deleted because ther were no members left`
 			);
 
 		res.redirect("/groups");
@@ -247,7 +254,7 @@ exports.getGroups = async (req, res, next) => {
 
 		const user = await User.findById(userId)
 			.lean()
-			.populate("groups", "name description code");
+			.populate("groups._id", "name description code");
 
 		if (!user)
 			error(
@@ -257,7 +264,7 @@ exports.getGroups = async (req, res, next) => {
 
 		res.render("main/groups", {
 			pageTitle: "My Groups",
-			groups: user.groups,
+			groups: user.groups.map((group) => group._id),
 		});
 	} catch (err) {
 		next(err);
@@ -331,6 +338,9 @@ exports.sendMessage = async (req, res, next) => {
 				"You have to be a member of the group to be able to download and share files"
 			);
 
+		if (!isAdmin(req, group))
+			error("Not Authorized", "Only admins can send messages");
+
 		const userId = req.session?.user._id;
 
 		const notification = new Message({
@@ -338,7 +348,6 @@ exports.sendMessage = async (req, res, next) => {
 			sender: userId,
 			group: group._id,
 			files: [],
-			state: isAdmin(req, group) ? "sent" : "pending",
 		});
 
 		for (const fileData of req.files) {
@@ -354,23 +363,12 @@ exports.sendMessage = async (req, res, next) => {
 
 		await notification.save();
 
-		if (notification.state === "sent") group.messages.push(notification._id);
-		else group.pendingMessages.push(notification._id);
+		group.messages.push(notification._id);
 
 		await group.save();
 
-		if (notification.state === "sent") {
-			req.flash("alertMessage", "Message is successfully sent");
-			res.redirect(`/group/${group._id.toString()}`);
-		} else {
-			message(
-				req,
-				res,
-				"Request Sent",
-				"Message request successfully sent",
-				true
-			);
-		}
+		req.flash("alertMessage", "Message is successfully sent");
+		res.redirect(`/group/${group._id.toString()}`);
 	} catch (err) {
 		next(err);
 	}
@@ -386,9 +384,6 @@ exports.download = async (req, res, next) => {
 			"message",
 			"group state"
 		);
-
-		if (!file || file.message.state === "pending")
-			error("File Not Gound", "Could not find a file with the ID from the url");
 
 		if (!isMember(req, { _id: file.message.group }))
 			error(
@@ -451,47 +446,6 @@ exports.getMembers = async (req, res, next) => {
 	}
 };
 
-exports.getMessageRequests = async (req, res, next) => {
-	try {
-		const groupId = req.params.groupId;
-
-		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
-
-		const group = await Group.findById(groupId);
-
-		if (!group)
-			error(
-				"Group Not Gound",
-				"Could not find a group with the ID from the url"
-			);
-
-		if (!isMember(req, group))
-			error(
-				"Access Denied",
-				"You have to be a member of the group to be able to access it"
-			);
-
-		if (!isAdmin(req, group))
-			error("Not Authorized", "Only admins can review message requests");
-
-		await group.populate({
-			path: "pendingMessages",
-			select: "description files createdAt",
-			populate: [
-				{ path: "sender", select: "name" },
-				{ path: "files", select: "filename" },
-			],
-		});
-
-		res.render("main/pending-messages.ejs", {
-			pageTitle: "Message Requests",
-			messages: group.pendingMessages,
-		});
-	} catch (err) {
-		next(err);
-	}
-};
-
 exports.removeUser = async (req, res, next) => {
 	try {
 		const groupId = req.body.groupId;
@@ -512,10 +466,10 @@ exports.removeUser = async (req, res, next) => {
 		if (!user)
 			error("User Not Gound", "Could not find a user with the ID from the url");
 
-		if (!isMember(req, group))
+		if (!isAdmin(req, group))
 			error(
 				"Access Denied",
-				"You have to be a member of the group to be able to manage users"
+				"You have to be administrator to be able to manage users"
 			);
 
 		if (
@@ -523,7 +477,7 @@ exports.removeUser = async (req, res, next) => {
 				{
 					session: {
 						isLoggedIn: true,
-						user: { _id: new mongoose.Types.ObjectId(userId) },
+						user: { _id: userId },
 					},
 				},
 				group
@@ -534,15 +488,12 @@ exports.removeUser = async (req, res, next) => {
 				"You can't remove a user who's not a member of the group"
 			);
 
-		if (!isAdmin(req, group))
-			error("Not Authorized", "Only admins can manage users");
-
 		const isAdministrator = isAdmin(
 			{ session: { isLoggedIn: true, user: { _id: userId } } },
 			group
 		);
 
-		if (group.owner.toString() === userId.toString())
+		if (group.owner._id.toString() === userId)
 			error("Invalid Action", "Owner can't be removed from the group");
 
 		if (
@@ -554,21 +505,11 @@ exports.removeUser = async (req, res, next) => {
 				"Only owner can remove administrators from the group"
 			);
 
-		if (user.toString() === group.owner._id.toString())
-			error("Owner can't be removed from group");
-
-		group.participants.pull({
-			_id: new mongoose.Types.ObjectId(userId),
-		});
-
-		if (isAdministrator)
-			group.admins.pull({ _id: new mongoose.Types.ObjectId(userId) });
+		await group.removeUser(userId);
 
 		user.groups.pull({
-			_id: new mongoose.Types.ObjectId(groupId),
+			_id: groupId,
 		});
-
-		await group.save();
 		await user.save();
 
 		res.redirect(`/group/${groupId.toString()}/members`);

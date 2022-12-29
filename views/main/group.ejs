@@ -9,11 +9,6 @@
 
     <main>
       <input type="hidden" name="code" value="<%= group.code %>">
-      <% if (isAdmin) { %>
-        <form action="/group/<%= group._id.toString() %>/message-requests" method="GET">
-          <button type="submit" class="admin_button">Review Message Requests</button>
-        </form>
-      <% } %>
       <form action="/group/<%= group._id.toString() %>/members" method="GET">
         <button type="submit" class="admin_button">Members</button>
       </form>
@@ -30,14 +25,18 @@
           <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
           <button type="submit" class="admin_button delete_group">Leave Group</button>
 			</form>
-      <hr>
-      <form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="groupId" value="<%= group._id.toString() %>">
-        <input type="file" name="file" accept="*" multiple>
-        <textarea name="description" placeholder="Description" cols="30" rows="10"></textarea>
-        <button type="submit"><%= isAdmin ? "Share" : "Request" %></button>
-      </form>
-      <hr>
+			<% if (isAdmin) { %>
+				<hr>
+      	<form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+       		<input type="hidden" name="groupId" value="<%= group._id.toString() %>">
+       		<input type="file" name="file" accept="*" multiple>
+       		<textarea name="description" placeholder="Description" cols="30" rows="10"></textarea>
+       		<button type="submit"><%= isAdmin ? "Share" : "Request" %></button>
+      	</form>
+				<hr>
+			<% } else { %>
+				<p style="margin: .25rem 1rem; color: purple; opacity: 0.6">Only admins can send messages</p>
+			<% } %>
       <% if (group.messages.length > 0) { %>
         <% group.messages.forEach(message => { %>
           <ul class="msg-border">
@@ -50,7 +49,7 @@
         <% }) %>
         <ul style="height: 0;"><li style="border: none; cursor: default; height: 0;"><a style="color: white; cursor: default; height: 0;">placeholder</a></li></ul>
       <% } else { %>
-        <h2 style="margin: .25rem 1rem; color: purple; opacity: 0.6">There are no files in this group yet. Be first to share one</h2>
+        <h2 style="margin: .25rem 1rem; color: purple; opacity: 0.6">There are no messages in this group yet. <% if (isAdmin) { %>Be first to share one<% } %></h2>
       <% } %>
     </main>
     <script type="text/javascript">

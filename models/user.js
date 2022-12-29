@@ -13,15 +13,23 @@ const userSchema = new Schema({
 	password: { type: String, required: true },
 	resetToken: String,
 	resetTokenExpiration: Date,
-	groups: [{ type: Schema.Types.ObjectId, ref: "Group" }],
+	groups: [
+		{
+			_id: {
+				type: Schema.Types.ObjectId,
+				ref: "Group",
+			},
+			personalStorage: [{ type: Schema.Types.ObjectId, ref: "File" }],
+		},
+	],
 });
 
-userSchema.methods.deleteAccount = async function (req) {
+userSchema.methods.deleteAccount = async function (req, res) {
 	const user = this;
 	const userId = user._id;
 	const groups = await Group.find({ participants: userId });
 
-	const deletedGroups = [];
+	// const deletedGroups = [];
 
 	for (const group of groups) {
 		group.participants.pull(userId);
@@ -29,7 +37,7 @@ userSchema.methods.deleteAccount = async function (req) {
 
 		if (group.participants.length < 1) {
 			await group.delete();
-			deletedGroups.push(group.name);
+			// deletedGroups.push(group.name);
 			continue;
 		}
 
@@ -47,7 +55,7 @@ userSchema.methods.deleteAccount = async function (req) {
 		res.redirect("/");
 	});
 
-	return deletedGroups;
+	// return deletedGroups;
 };
 
 const User = mongoose.model("User", userSchema);

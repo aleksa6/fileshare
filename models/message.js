@@ -8,7 +8,6 @@ const messageSchema = new Schema(
     sender: { type: Schema.Types.ObjectId, ref: "User" },
     group: { type: Schema.Types.ObjectId, ref: "Group" },
     files: [{ type: Schema.Types.ObjectId, ref: "File" }],
-    state: { type: String, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

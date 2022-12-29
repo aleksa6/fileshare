@@ -97,11 +97,6 @@ router.post(
 
 router.get("/group/:groupId/members", groupController.getMembers);
 
-router.get(
-	"/group/:groupId/message-requests",
-	groupController.getMessageRequests
-);
-
 router.post("/remove", groupController.removeUser);
 
 router.post("/add-admin", groupController.addAdmin);
