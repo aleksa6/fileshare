@@ -194,6 +194,18 @@ button {
   transition: 0.2s;
 }
 
+.admin_button.important {
+	background-color: purple;
+	color: white;
+	opacity: .6;
+}
+
+.admin_button.important:hover {
+	background-color: #fff;
+	color: purple;
+	opacity: 1;
+}
+
 .unfocusable:focus {
   outline: none;
 }

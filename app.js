@@ -65,6 +65,7 @@ app.use((req, res, next) => {
 	res.locals.isLoggedIn = req.session.isLoggedIn;
 	res.locals.isInGroup = req.session.isInGroup;
 	res.locals.group = req.session.group;
+	res.locals.user = req.session.user;
 	res.locals.csrfToken = req.csrfToken();
 	next();
 });

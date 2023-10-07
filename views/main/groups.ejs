@@ -11,7 +11,7 @@
       <% if (groups.length > 0) { %>
         <ul>
           <% groups.forEach(group => { %>
-            <li><a class="unselectable" href="/group/<%= group._id %>"><%= group.name %> | <span style="font-size: small;"><%= group.description %> <span style="font-size: large;">|</span> <%= group.code %> (invite code)</span></a></li>
+            <li><a class="unselectable" href="/groups/<%= group._id %>"><%= group.name %> | <span style="font-size: small;"><%= group.description %> <span style="font-size: large;">|</span> <%= group.code %> (invite code)</span></a></li>
           <% }) %>
         </ul>
       <% } else { %>

@@ -102,7 +102,7 @@ exports.postJoin = async (req, res, next) => {
 		}
 
 		req.session.save((err) => {
-			res.redirect(`/group/${group._id.toString()}`);
+			res.redirect(`/groups/${group._id.toString()}`);
 		});
 	} catch (err) {
 		next(err);
@@ -187,6 +187,7 @@ exports.deleteGroup = async (req, res, next) => {
 		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
 
 		const group = await Group.findById(groupId);
+		const user = await User.findById(userId);
 
 		if (!group)
 			error(
@@ -239,10 +240,12 @@ exports.leaveGroup = async (req, res, next) => {
 		if (isDeleted)
 			req.flash(
 				"alertMessage",
-				`Group have been deleted because ther were no members left`
+				`Group have been deleted because there were no members left`
 			);
 
-		res.redirect("/groups");
+		req.session.save((err) => {
+			res.redirect("/groups");
+		});
 	} catch (err) {
 		next(err);
 	}
@@ -300,10 +303,14 @@ exports.getGroup = async (req, res, next) => {
 				"You have to be a member of the group to be able to access it"
 			);
 
+		const oldInput = req.flash("oldInput")[0];
+
 		res.render("main/group", {
 			pageTitle: group.name,
 			isAdmin: isAdmin(req, group),
+			isLoggedIn: req.session?.isLoggedIn,
 			group,
+			oldInput,
 		});
 	} catch (err) {
 		next(err);
@@ -319,7 +326,21 @@ exports.sendMessage = async (req, res, next) => {
 		if (!errors.isEmpty()) {
 			req.flash("alertMessage", errors.array()[0].msg);
 			clearFiles(req);
-			return res.redirect(`/group/${groupId}`);
+			return req.session.save((err) => {
+				res.redirect(`/groups/${groupId}`);
+			});
+		}
+
+		if (req.files.length < 1) {
+			req.flash(
+				"alertMessage",
+				"Our purpose is to help people share files. Therefore, you must provide a file"
+			);
+			req.flash("oldInput", { description: req.body.description });
+
+			return req.session.save((err) => {
+				res.redirect(`/groups/${groupId}`);
+			});
 		}
 
 		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
@@ -355,7 +376,7 @@ exports.sendMessage = async (req, res, next) => {
 				filename: fileData.originalname,
 				mimetype: fileData.mimetype,
 				path: fileData.path,
-				message: notification._id,
+				message: notification.group,
 			});
 
 			notification.files.push(file._id);
@@ -368,7 +389,9 @@ exports.sendMessage = async (req, res, next) => {
 		await group.save();
 
 		req.flash("alertMessage", "Message is successfully sent");
-		res.redirect(`/group/${group._id.toString()}`);
+		req.session.save((err) => {
+			res.redirect(`/groups/${group._id.toString()}`);
+		});
 	} catch (err) {
 		next(err);
 	}
@@ -385,7 +408,7 @@ exports.download = async (req, res, next) => {
 			"group state"
 		);
 
-		if (!isMember(req, { _id: file.message.group }))
+		if (!isMember(req, { _id: file.group }))
 			error(
 				"Access Denied",
 				"You have to be a member of the group to be able to download and share files"
@@ -512,7 +535,7 @@ exports.removeUser = async (req, res, next) => {
 		});
 		await user.save();
 
-		res.redirect(`/group/${groupId.toString()}/members`);
+		res.redirect(`/groups/${groupId.toString()}/members`);
 	} catch (err) {
 		next(err);
 	}
@@ -563,7 +586,7 @@ exports.addAdmin = async (req, res, next) => {
 
 		await group.save();
 
-		res.redirect(`/group/${groupId.toString()}/members`);
+		res.redirect(`/groups/${groupId.toString()}/members`);
 	} catch (err) {
 		next(err);
 	}
@@ -614,7 +637,111 @@ exports.removeAdmin = async (req, res, next) => {
 
 		await group.save();
 
-		res.redirect(`/group/${groupId.toString()}/members`);
+		res.redirect(`/groups/${groupId.toString()}/members`);
+	} catch (err) {
+		next(err);
+	}
+};
+
+exports.getPersonalStorage = async (req, res, next) => {
+	try {
+
+		const groupId = req.params.groupId;
+		const username = req.params.username;
+		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+		const group = await Group.findById(groupId);
+		const user = await User.findOne({
+			username: username.slice(0, -4).concat("#").concat(username.slice(-4)),
+		});
+
+		if (!user)
+			error(
+				"User Not Found",
+				"Could not find a user with the ID from the request"
+			);
+		if (!group)
+			error(
+				"Group Not Gound",
+				"Could not find a group with the ID from the url"
+			);
+
+		if (!isMember(req, group))
+			error(
+				"Access Denied",
+				"You have to be a member of the group to be able to see other's storages"
+			);
+
+		if (
+			!isMember(
+				{ session: { isLoggedIn: true, user: { _id: user._id.toString() } } },
+				group
+			)
+		)
+			error(
+				"Invalid Action",
+				"You can't see the user's storage because user either doesn't exists or is not a member of the group"
+			);
+
+		const storage = user.groups.find(
+			(group) => group._id.toString() === groupId.toString()
+		);
+
+		console.log(storage);
+
+		res.render("main/storage", {
+			pageTitle: "Personal Storage",
+			items: storage.personalStorage,
+		});
+	} catch (err) {
+		next(err);
+	}
+};
+
+exports.uploadToStorage = async (req, res, next) => {
+	try {
+		const groupId = req.params.groupId;
+		const username = req.params.username;
+		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+		const group = await Group.findById(groupId);
+		const user = await User.findOne({
+			username: username.slice(0, -4).concat("#").concat(username.slice(-4)),
+		});
+
+		if (!user)
+			error(
+				"User Not Found",
+				"Could not find a user with the ID from the request"
+			);
+		if (!group)
+			error(
+				"Group Not Gound",
+				"Could not find a group with the ID from the url"
+			);
+
+		if (!isMember(req, group))
+			error(
+				"Access Denied",
+				"You have to be a member of the group to be able to see other's storages"
+			);
+
+		if (
+			!isMember(
+				{ session: { isLoggedIn: true, user: { _id: user._id.toString() } } },
+				group
+			)
+		)
+			error(
+				"Invalid Action",
+				"You can't see the user's storage because user either doesn't exists or is not a member of the group"
+			);
+
+		const storage = user.groups.find(
+			(group) => group._id.toString() === groupId.toString()
+		);
+
+		
 	} catch (err) {
 		next(err);
 	}

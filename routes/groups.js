@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { check } = require("express-validator");
+const mime = require("mime-types");
 const rateLimit = require("express-rate-limit");
 const router = require("express").Router();
 const multer = require("multer");
@@ -23,7 +24,10 @@ const fileStorage = multer.diskStorage({
 		cb(null, path.join(__dirname, "..", "files"));
 	},
 	filename: (req, file, cb) => {
-		const name = `${uuidv4()}.${file.originalname.split(".").slice(-1)}`;
+		let name = uuidv4();
+		const ext = path.extname(file.originalname).trim();
+		if (ext.length) name = name + ext;
+
 		cb(null, name);
 
 		req.on("aborted", () => {
@@ -79,7 +83,7 @@ router.post("/delete-group", groupController.deleteGroup);
 
 router.get("/groups", isAuth, groupController.getGroups);
 
-router.get("/group/:groupId", groupController.getGroup);
+router.get("/groups/:groupId", groupController.getGroup);
 
 router.get("/file/:fileId", groupController.download);
 
@@ -95,13 +99,23 @@ router.post(
 	groupController.sendMessage
 );
 
-router.get("/group/:groupId/members", groupController.getMembers);
+router.get("/groups/:groupId/members", groupController.getMembers);
 
 router.post("/remove", groupController.removeUser);
 
 router.post("/add-admin", groupController.addAdmin);
 
 router.post("/remove-admin", groupController.removeAdmin);
+
+router.get(
+	"/groups/:groupId/:username/personal-storage",
+	groupController.getPersonalStorage
+);
+
+router.post(
+	"/groups/:groupId/:username/personal-storage/upload",
+	groupController.uploadToStorage
+);
 
 router.get("/message", groupController.message);
 
