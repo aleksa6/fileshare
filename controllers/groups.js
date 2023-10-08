@@ -13,6 +13,7 @@ const {
 	clearFiles,
 } = require("../util/util");
 const Group = require("../models/group");
+
 const User = require("../models/user");
 const File = require("../models/file");
 const Message = require("../models/message");
@@ -645,7 +646,6 @@ exports.removeAdmin = async (req, res, next) => {
 
 exports.getPersonalStorage = async (req, res, next) => {
 	try {
-
 		const groupId = req.params.groupId;
 		const username = req.params.username;
 		if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
@@ -740,8 +740,6 @@ exports.uploadToStorage = async (req, res, next) => {
 		const storage = user.groups.find(
 			(group) => group._id.toString() === groupId.toString()
 		);
-
-		
 	} catch (err) {
 		next(err);
 	}
