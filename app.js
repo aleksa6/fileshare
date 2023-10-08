@@ -94,6 +94,6 @@ app.use(async (error, req, res, next) => {
 mongoose
 	.connect(MONGODB_URI)
 	.then(async () => {
-		app.listen(3000)
+		app.listen(3000);
 	})
 	.catch((err) => console.log(err));
