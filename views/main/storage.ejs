@@ -9,7 +9,9 @@
       	<input type="hidden" name="groupId" value="<%= group._id.toString() %>">
        	<input type="file" name="file" accept="*" multiple>
       	<textarea name="description" placeholder="Description" cols="30" rows="10"><%= oldInput?.description %></textarea>
-       	<button type="submit"><%= isAdmin ? "Share" : "Request" %></button>
+        <% if (isAdmin) { %>
+          <button type="submit">Share</button>
+        <% } %>
       </form>
 			<hr>
       <% if (group.messages.length > 0) { %>

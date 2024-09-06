@@ -75,6 +75,7 @@ app.use(groupRoutes);
 
 app.use((req, res, next) => {
 	res.render("404", { pageTitle: "Not Found" });
+  next();
 });
 
 app.use(async (error, req, res, next) => {

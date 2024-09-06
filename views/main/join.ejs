@@ -16,7 +16,7 @@
       
       <form action="/join" method="POST">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input value="<%= error != null ? oldInput.code : ''%>" type="text" placeholder="Group ID" name="code">
+        <input class="<%= error != null && fields.includes("code") ? 'invalid' : ''%>" value="<%= error != null ? oldInput.code : ''%>" type="text" placeholder="Group ID" name="code">
         <input class="<%= error != null ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" type="password" placeholder="Password" name="password">
         <button type="submit">Join</button>
       </form>

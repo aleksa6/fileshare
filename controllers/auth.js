@@ -1,11 +1,11 @@
 const crypto = require("crypto");
 
 const { validationResult } = require("express-validator");
+
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 const mongoose = require("mongoose");
-
 const { message, updateNames } = require("../util/util");
 const User = require("../models/user");
 const Group = require("../models/group");
