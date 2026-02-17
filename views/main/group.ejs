@@ -50,7 +50,7 @@
             <% message.files.forEach(file => { %>
               <li><a href="/file/<%= file._id %>"><%= file.filename %></span></a></li>
             <% }) %>
-            <h3>shared by <span style="color: green;"><%= message.sender.name %></span> on <span style="color: green;"><%= message.createdAt.toLocaleDateString("en-US", {minute: "numeric", hour: "numeric", day: "numeric", month: "long", year: "numeric"}) %></span></h3>
+            <h3>shared by <span style="color: green;"><%= message.senderSnapshot %></span> on <span style="color: green;"><%= message.createdAt.toLocaleDateString("en-US", {minute: "numeric", hour: "numeric", day: "numeric", month: "long", year: "numeric"}) %></span></h3>
           </ul>
         <% }) %>
         <ul style="height: 0;"><li style="border: none; cursor: default; height: 0;"><a style="color: white; cursor: default; height: 0;">placeholder</a></li></ul>

@@ -6,6 +6,7 @@ const messageSchema = new Schema(
   {
     description: { type: String, required: true },
     sender: { type: Schema.Types.ObjectId, ref: "User" },
+    senderSnapshot: { type: String, required: true },
     group: { type: Schema.Types.ObjectId, ref: "Group" },
     files: [{ type: Schema.Types.ObjectId, ref: "File" }],
   },

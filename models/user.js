@@ -3,6 +3,7 @@ const fs = require("fs");
 const mongoose = require("mongoose");
 
 const Group = require("./group");
+const Message = require("./message");
 
 const Schema = mongoose.Schema;
 
@@ -30,6 +31,10 @@ userSchema.methods.deleteAccount = async function (req, res) {
 	const groups = await Group.find({ participants: userId });
 
 	// const deletedGroups = [];
+  await Message.updateMany(
+    { sender: userId },
+    { $set: { sender: null } }
+  );
 
 	for (const group of groups) {
 		group.participants.pull(userId);

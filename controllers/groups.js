@@ -302,11 +302,8 @@ exports.getGroup = async (req, res, next) => {
     const group = await Group.findById(groupId)
       .populate({
         path: "messages",
-        select: "description files createdAt",
-        populate: [
-          { path: "sender", select: "name" },
-          { path: "files", select: "filename" },
-        ],
+        select: "description files senderSnapshot createdAt",
+        populate: { path: "files", select: "filename" },
       })
       .lean();
 
@@ -382,10 +379,12 @@ exports.sendMessage = async (req, res, next) => {
       error("Not Authorized", "Only admins can send messages");
 
     const userId = req.session?.user._id;
+    const user = await User.findById(userId);
 
     const notification = new Message({
       description: req.body.description,
       sender: userId,
+      senderSnapshot: user.name,
       group: group._id,
       files: [],
     });
@@ -424,10 +423,8 @@ exports.download = async (req, res, next) => {
 
     const file = await File.findById(req.params.fileId).populate({
       path: "message",
-      //"group state",
       select: "group",
-      populate: { path: "group", select: "_id participants" }
-      
+      populate: { path: "group", select: "_id participants" },
     });
 
     if (!isMember(req, file.message.group))
