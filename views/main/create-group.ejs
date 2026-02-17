@@ -14,10 +14,10 @@
       
       <form action="/create-group" method="POST">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="text" class="<%= error != null && fields.includes('name') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.name : ''%>" placeholder="Name" name="name">
-        <input type="text" class="<%= error != null && fields.includes('description') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.description : ''%>" placeholder="Description" name="description">
-        <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password">
-        <input type="password" class="<%= error != null && fields.includes('passwordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.passwordConf : ''%>" placeholder="Confirm password" name="passwordConf">
+        <input type="text" class="<%= error != null && fields.includes('name') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.name : ''%>" placeholder="Name" name="name" required>
+        <input type="text" class="<%= error != null && fields.includes('description') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.description : ''%>" placeholder="Description" name="description" required>
+        <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password" required>
+        <input type="password" class="<%= error != null && fields.includes('passwordConf') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.passwordConf : ''%>" placeholder="Confirm password" name="passwordConf" required>
         <button type="submit">Create</button>
       </form>
       

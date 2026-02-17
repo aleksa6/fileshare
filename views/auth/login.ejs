@@ -16,8 +16,8 @@
 
       <form action="/auth/login" method="POST">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="text" class="<%= error != null && fields.includes('email') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.email : ''%>" placeholder="Email" name="email">
-        <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password">
+        <input type="text" class="<%= error != null && fields.includes('email') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.email : ''%>" placeholder="Email" name="email" required>
+        <input type="password" class="<%= error != null && fields.includes('password') ? 'invalid' : ''%>" value="<%= error != null ? oldInput.password : ''%>" placeholder="Password" name="password" required>
         <a href="/auth/reset" style="font-size: small;">Forgot password</a>
         <button type="submit">Login</button>
       </form>

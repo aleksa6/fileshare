@@ -14,7 +14,7 @@
       
       <form action="/auth/reset" method="POST">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="text" class="<%= error != null ? 'invalid' : ''%>" value="<%= error != null ? oldInput.email : ''%>" placeholder="Email" name="email">
+        <input type="text" class="<%= error != null ? 'invalid' : ''%>" value="<%= error != null ? oldInput.email : ''%>" placeholder="Email" name="email" required>
         <button type="submit">Send reset link</button>
       </form>
       

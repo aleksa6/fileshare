@@ -129,7 +129,7 @@ exports.postLogin = async (req, res, next) => {
 		req.session.isLoggedIn = true;
 		req.session.user = user;
 		req.session.isInGroup = false;
-		req.session.group = false;
+		req.session.group = null;
 
 		return req.session.save((err) => {
 			res.redirect("/groups");

@@ -35,8 +35,8 @@
 				<hr>
       	<form id="share_form" action="/send-message?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
        		<input type="hidden" name="groupId" value="<%= group._id.toString() %>">
-       		<input type="file" name="file" accept="*" multiple>
-      		<textarea name="description" placeholder="Description" cols="30" rows="10"><%= oldInput?.description %></textarea>
+       		<input type="file" name="file" accept="*" multiple required>
+      		<textarea name="description" placeholder="Description" cols="30" rows="10" required><%= oldInput?.description %></textarea>
        		<button type="submit"><%= isAdmin ? "Share" : "Request" %></button>
       	</form>
 				<hr>

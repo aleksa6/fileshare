@@ -231,10 +231,26 @@ exports.deleteGroup = async (req, res, next) => {
 
 exports.leaveGroup = async (req, res, next) => {
   try {
-    const userId = req.session?.user._id;
     const groupId = req.body.groupId;
 
     if (!isValid(groupId)) error("Invalid Param", "Group ID is invalid");
+
+    if (!req.session?.isLoggedIn) {
+      if (!req.session?.isInGroup | !req.session?.group) 
+        error("Invalid Action", "You are not currently in a group");
+
+      if (req.session.group._id.toString() != groupId)
+        error("Access Denied", "You can only leave your current group");
+
+      req.session.isInGroup = false;
+      req.session.group = null;
+
+      return req.session.save((err) => {
+        res.redirect("/");
+      })
+    }
+
+    const userId = req.session.user._id;
 
     const user = await User.findById(userId);
     const group = await Group.findById(groupId);
@@ -379,6 +395,7 @@ exports.sendMessage = async (req, res, next) => {
       error("Not Authorized", "Only admins can send messages");
 
     const userId = req.session?.user._id;
+
     const user = await User.findById(userId);
 
     const notification = new Message({
