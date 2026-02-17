@@ -219,8 +219,8 @@ exports.deleteGroup = async (req, res, next) => {
 
     await group.delete();
     await User.updateMany(
-      { _id: { $in: this.participants } },
-      { $pull: { groups: this._id } }
+      { _id: { $in: group.participants } },
+      { $pull: { groups: { _id: group._id } } }
     );
 
     res.redirect("/groups");
@@ -395,7 +395,7 @@ exports.sendMessage = async (req, res, next) => {
         filename: fileData.originalname,
         mimetype: fileData.mimetype,
         path: fileData.path,
-        message: notification.group,
+        message: notification._id,
       });
 
       notification.files.push(file._id);
@@ -422,12 +422,15 @@ exports.download = async (req, res, next) => {
 
     if (!isValid(fileId)) error("Invalid Param", "Group ID is invalid");
 
-    const file = await File.findById(req.params.fileId).populate(
-      "message",
-      "group state"
-    );
+    const file = await File.findById(req.params.fileId).populate({
+      path: "message",
+      //"group state",
+      select: "group",
+      populate: { path: "group", select: "_id participants" }
+      
+    });
 
-    if (!isMember(req, { _id: file.group }))
+    if (!isMember(req, file.message.group))
       error(
         "Access Denied",
         "You have to be a member of the group to be able to download and share files"
